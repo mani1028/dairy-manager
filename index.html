@@ -770,7 +770,7 @@
                     }
                     
                     // Format numbers to 2 decimal places if needed, or integers
-                    const waMsg = `Dear ${c.name},\n\nThank you for your order today worth ₹${todayAmt}.\nYour previous outstanding balance was ₹${prevBalance}.\nThis brings your total due to *₹${totalDue}*.\n\nPlease clear the payment at your earliest convenience.\n\nBest regards,\nDurga Dairy Warangal`;
+                    const waMsg = `Dear ${c.name} (ID: ${c.id}),\n\nThank you for your order today worth ₹${todayAmt}.\nYour previous outstanding balance is ₹${prevBalance}.\nThis brings your total due to *₹${totalDue}*.\n\nWe kindly request you to clear the payment at your earliest convenience.\n\nBest regards,\nDurga Dairy Warangal`;
                     const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}`;
                     // -------------------------------------------------------------------
 
