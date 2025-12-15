@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Manager Pro v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobile Sidebar Transition */
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        
+        /* Print Styles */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; height: auto; overflow: visible; }
+            #sidebar, #loginScreen, #mobileHeader, #toast-container { display: none; }
+            #mainContent { margin: 0; padding: 0; overflow: visible; width: 100%; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col md:flex-row text-slate-800 overflow-hidden">
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center fade-in">
+            <div class="mb-6">
+                <div class="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-4">
+                    <i class="fas fa-cow"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">Dairy Manager</h1>
+                <p class="text-slate-500">Distribution & Billing System</p>
+            </div>
+            <form onsubmit="auth.login(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin" value="admin">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="password" class="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••" value="password">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg shadow-blue-200">
+                    Sign In
+                </button>
+            </form>
+            <p class="mt-4 text-xs text-slate-400">Demo Credentials: admin / password</p>
+        </div>
+    </div>
+
+    <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-cow text-blue-400 text-xl"></i>
+            <span class="font-bold text-lg">DairyMgr</span>
+        </div>
+        <button onclick="app.toggleSidebar()" class="text-white focus:outline-none">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </div>
+
+    <aside class="fixed md:relative inset-y-0 left-0 w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none" id="sidebar">
+        <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-cow text-blue-400 text-xl"></i>
+                <span class="font-bold text-lg tracking-wide">DairyMgr</span>
+            </div>
+            <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+            <p class="px-4 text-xs font-bold text-slate-500 uppercase mb-2 mt-2">Operations</p>
+            <button onclick="router.navigate('dashboard')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="dashboard">
+                <i class="fas fa-home w-5"></i> <span>Dashboard</span>
+            </button>
+            <button onclick="router.navigate('orders')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="orders">
+                <i class="fas fa-truck w-5"></i> <span>Orders & Route</span>
+            </button>
+            <button onclick="router.navigate('customers')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="customers">
+                <i class="fas fa-users w-5"></i> <span>Customers</span>
+            </button>
+            
+            <p class="px-4 text-xs font-bold text-slate-500 uppercase mb-2 mt-6">Finance</p>
+            <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="billing">
+                <i class="fas fa-file-invoice-dollar w-5"></i> <span>Invoices & Payments</span>
+            </button>
+            <button onclick="router.navigate('expenses')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="expenses">
+                <i class="fas fa-wallet w-5"></i> <span>Expenses</span>
+            </button>
+            <button onclick="router.navigate('reports')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="reports">
+                <i class="fas fa-chart-bar w-5"></i> <span>Reports</span>
+            </button>
+
+            <p class="px-4 text-xs font-bold text-slate-500 uppercase mb-2 mt-6">System</p>
+            <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="settings">
+                <i class="fas fa-cog w-5"></i> <span>Settings</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="auth.logout()" class="flex items-center space-x-3 px-4 py-2 text-red-400 hover:text-red-300 w-full transition text-sm">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto relative bg-slate-50 p-4 md:p-8 w-full" id="mainContent">
+        <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+        
+        <section id="dashboard" class="view-section fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800">Dashboard</h2>
+                    <p class="text-sm text-slate-500">Overview for <span id="dashDateLabel" class="font-bold"></span> <span id="todayBadge" class="hidden ml-2 bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">TODAY</span></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="app.setDateYesterday()" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-200 transition">Yesterday</button>
+                    <div class="flex items-center bg-white p-1 rounded-lg border border-slate-300 shadow-sm">
+                        <button onclick="app.changeDate(-1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-left"></i></button>
+                        <input type="date" id="dashboardDate" class="text-slate-700 text-sm font-bold border-none focus:ring-0 outline-none bg-transparent" onchange="app.renderDashboard()">
+                        <button onclick="app.changeDate(1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-green-500">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-slate-500 uppercase">Today's Sale (Inc. Drafts)</p>
+                        <span id="sales-change-badge" class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">0%</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-green-600 mt-1" id="dash-revenue-today">₹0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-slate-400">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Opening Balance</p>
+                    <h3 class="text-2xl font-bold text-slate-700 mt-1" id="dash-dues-prev">₹0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-red-500">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Total Dues (Live)</p>
+                    <h3 class="text-2xl font-bold text-red-600 mt-1" id="dash-dues-total">₹0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-purple-500">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Active Customers</p>
+                    <h3 class="text-2xl font-bold text-purple-700 mt-1" id="dash-active-customers">0</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[350px] flex flex-col">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2 flex justify-between">
+                        <span>Customer Dues Breakdown</span>
+                        <span class="text-xs text-slate-400 font-normal">Top Defaulters</span>
+                    </h3>
+                    <div class="flex-1 overflow-y-auto" id="highDuesList">
+                        </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[350px] flex flex-col">
+                    <h3 class="font-bold text-slate-700 mb-4">Sales Trend (Last 7 Days)</h3>
+                    <div class="relative flex-1 w-full">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="customers" class="view-section hidden fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Customers</h2>
+                <button onclick="customerManager.openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-lg shadow-blue-200 transition"><i class="fas fa-plus mr-2"></i> Add Customer</button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-4 justify-between">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="customerSearch" placeholder="Search customers..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500" onkeyup="customerManager.renderList()">
+                    </div>
+                    <select id="customerSort" class="border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-500" onchange="customerManager.renderList()">
+                        <option value="name">Sort by Name</option>
+                        <option value="dues_high">Sort by Dues (High-Low)</option>
+                        <option value="dues_low">Sort by Dues (Low-High)</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="p-4">Customer Info</th>
+                                <th class="p-4">Contact</th>
+                                <th class="p-4 text-right">Outstanding</th>
+                                <th class="p-4 text-center">Rates</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="orders" class="view-section hidden fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 no-print">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Daily Route</h2>
+                    <p class="text-slate-500 text-sm">Manage deliveries and print route sheets.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <div class="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-300 shadow-sm">
+                        <button onclick="orderManager.changeDate(-1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-left"></i></button>
+                        <input type="date" id="orderDate" class="text-slate-700 text-sm font-bold border-none focus:ring-0 outline-none bg-transparent" onchange="orderManager.render()">
+                        <button onclick="orderManager.changeDate(1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <button onclick="orderManager.fillYesterday()" class="bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-200 transition font-medium" title="Copy quantities from last order"><i class="fas fa-history mr-1"></i> Copy Prev</button>
+                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-print mr-2"></i> Print</button>
+                </div>
+            </div>
+
+            <div class="print-only mb-6 text-center border-b pb-4">
+                <h1 class="text-2xl font-bold">Daily Distribution Sheet</h1>
+                <p class="text-sm text-gray-600">Date: <span id="printDate"></span></p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center">
+                    <span>Order List <span class="text-xs font-normal text-slate-500 ml-2" id="orderListDate"></span></span>
+                    <div class="flex gap-2">
+                        <button onclick="orderManager.saveDraft()" class="text-xs bg-slate-200 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-300 font-bold">Save Changes</button>
+                        <button onclick="orderManager.finalizeDay()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 font-bold shadow-sm">Finalize & Update Dues</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-bold border-b border-slate-200">
+                            <tr id="routeHeaderRow">
+                                <th class="p-4 w-1/3">Customer</th>
+                                </tr>
+                        </thead>
+                        <tbody id="orderTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <tfoot id="orderTableFooter" class="bg-slate-100 font-bold text-slate-700 text-sm border-t-2 border-slate-200">
+                            </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="print-only mt-8 flex justify-between text-sm text-gray-500 pt-8 border-t border-gray-300">
+                <div>Distributor Signature</div>
+                <div>Supervisor Signature</div>
+            </div>
+        </section>
+
+        <section id="billing" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Billing & Payments</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center"><i class="fas fa-hand-holding-usd text-green-500 mr-2"></i> Record Payment</h3>
+                        <form onsubmit="billingManager.recordPayment(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Customer</label>
+                                    <select id="payCustomer" class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none border" required></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label>
+                                    <input type="number" id="payAmount" min="0" class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none border" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+                                    <input type="date" id="payDate" class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none border" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Collected By</label>
+                                    <select id="payCollector" class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none border"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note (Optional)</label>
+                                    <input type="text" id="payNote" placeholder="e.g. Cash, UPI Ref..." class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none border">
+                                </div>
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition">Save Payment</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h3 class="font-bold text-blue-800 mb-2">Invoice Generator</h3>
+                        <div class="space-y-3">
+                            <select id="invoiceCustomer" class="w-full border-blue-200 rounded-lg p-2 text-sm bg-white"></select>
+                            <button onclick="billingManager.generateInvoice()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition">Generate Statement</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 class="font-bold text-slate-700">Payment History</h3>
+                        </div>
+                        <div class="overflow-y-auto flex-1">
+                            <table class="w-full text-left">
+                                <thead class="bg-white text-slate-500 text-xs uppercase sticky top-0 shadow-sm">
+                                    <tr>
+                                        <th class="p-4 bg-slate-50">Date</th>
+                                        <th class="p-4 bg-slate-50">Customer</th>
+                                        <th class="p-4 bg-slate-50">Details</th>
+                                        <th class="p-4 bg-slate-50 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentHistoryBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="invoice-view" class="view-section hidden bg-white p-8 max-w-4xl mx-auto shadow-lg my-8 print:shadow-none print:w-full print:m-0">
+            <div class="flex justify-between items-start mb-8 border-b pb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800">INVOICE</h1>
+                    <p class="text-slate-500">Dairy Manager Pro</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-xl font-bold" id="inv-cust-name">Customer Name</h2>
+                    <p class="text-sm text-slate-500" id="inv-date">Date: 2023-01-01</p>
+                </div>
+            </div>
+            <div id="invoice-content" class="mb-8">
+                </div>
+            <div class="flex justify-end gap-4 no-print">
+                <button onclick="router.navigate('billing')" class="px-4 py-2 border rounded hover:bg-slate-50">Back</button>
+                <button id="whatsappShareBtn" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center"><i class="fab fa-whatsapp mr-2"></i> Share</button>
+                <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Print Invoice</button>
+            </div>
+        </section>
+
+        <section id="expenses" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Expense Manager</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="font-bold text-lg mb-4 text-slate-800">Add New Expense</h3>
+                    <form onsubmit="expenseManager.add(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Description / Details</label>
+                            <input type="text" id="expTitle" placeholder="e.g., Diesel for Truck, Office Rent" class="w-full border-slate-300 rounded-lg p-2.5 border" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                                <select id="expCategory" class="w-full border-slate-300 rounded-lg p-2.5 border"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Paid To (Employee?)</label>
+                                <select id="expEmployee" class="w-full border-slate-300 rounded-lg p-2.5 border">
+                                    <option value="">-- Other / Vendor --</option>
+                                    </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label>
+                            <input type="number" id="expAmount" min="0" class="w-full border-slate-300 rounded-lg p-2.5 border" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+                            <input type="date" id="expDate" class="w-full border-slate-300 rounded-lg p-2.5 border" required>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">Add Expense</button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Expense Log</div>
+                    <div class="overflow-y-auto flex-1">
+                        <table class="w-full text-left">
+                            <thead class="bg-white text-slate-500 text-xs uppercase sticky top-0 shadow-sm">
+                                <tr>
+                                    <th class="p-4 bg-slate-50">Date</th>
+                                    <th class="p-4 bg-slate-50">Description</th>
+                                    <th class="p-4 bg-slate-50 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTableBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="reports" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Reports & Analytics</h2>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Report Type</label>
+                        <select id="reportType" class="border p-2 rounded-lg text-sm w-48" onchange="reportManager.toggleInputs()">
+                            <option value="financial">Financial Summary</option>
+                            <option value="customer_monthly">Customer Statement</option>
+                            <option value="day_book">Day Book (Orders)</option>
+                            <option value="expense_report">Expenses Report</option>
+                        </select>
+                    </div>
+                    <div id="dateRangeInputs" class="flex gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Start Date</label>
+                            <input type="date" id="repStartDate" class="border p-2 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">End Date</label>
+                            <input type="date" id="repEndDate" class="border p-2 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    
+                    <div id="repCustomerContainer" class="hidden">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Customer</label>
+                        <select id="repCustomer" class="border p-2 rounded-lg text-sm w-48"></select>
+                    </div>
+                    
+                    <div id="repEmployeeContainer" class="hidden">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Employee</label>
+                        <select id="repEmployee" class="border p-2 rounded-lg text-sm w-48"></select>
+                    </div>
+
+                    <button onclick="reportManager.generate()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 h-[38px]">Generate Report</button>
+                </div>
+            </div>
+
+            <div id="reportOutput" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[300px] print-only">
+                <div class="text-center text-slate-400 mt-10">Select parameters above to generate report.</div>
+            </div>
+        </section>
+
+        <section id="settings" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">System Settings</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <span class="font-bold text-slate-700">Product Management</span>
+                        <button onclick="settingsManager.addProduct()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add Product</button>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 gap-4" id="productSettingsList"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <span class="font-bold text-slate-700">Staff Management</span>
+                        <button onclick="settingsManager.openEmployeeModal()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add Staff</button>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-2" id="employeeList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                <div class="p-5 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Data Management</div>
+                <div class="p-6 flex flex-col md:flex-row gap-4">
+                    <button onclick="dataManager.backup()" class="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition">
+                        <i class="fas fa-download"></i> Backup Data
+                    </button>
+                    <button onclick="document.getElementById('restoreFile').click()" class="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition">
+                        <i class="fas fa-upload"></i> Restore Data
+                    </button>
+                    <input type="file" id="restoreFile" class="hidden" accept=".json" onchange="dataManager.restore(this)">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="customerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="p-5 border-b bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800" id="modalTitle">Add Customer</h3>
+                <button onclick="customerManager.closeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="custId">
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Customer Name</label>
+                    <input type="text" id="custName" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Phone Number</label>
+                    <input type="tel" id="custPhone" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="customerManager.checkDuplicate(this.value)">
+                    <p id="dupWarning" class="text-xs text-orange-600 mt-2 hidden font-medium flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i> Warning: Phone exists!</p>
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Address</label>
+                    <textarea id="custAddress" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button onclick="customerManager.closeModal()" class="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancel</button>
+                    <button onclick="customerManager.save()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-5 border-b bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Manage Customer Rates</h3>
+                <button onclick="document.getElementById('rateModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-sm text-slate-500">Rates for: <span id="rateCustName" class="font-bold text-slate-800"></span></p>
+                    <button id="btnRestoreRates" onclick="customerManager.restoreStandardRates()" class="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 px-2 py-1 rounded border border-slate-200 transition hidden">
+                        <i class="fas fa-undo mr-1"></i> Restore Standard
+                    </button>
+                </div>
+                <input type="hidden" id="rateCustId">
+                
+                <div class="grid grid-cols-2 gap-4 mb-2 text-xs font-bold text-slate-500 uppercase">
+                    <div>Product</div>
+                    <div class="text-right">Custom Rate</div>
+                </div>
+                
+                <div id="rateInputs" class="space-y-3 mb-6"></div>
+                
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+                    <p class="text-xs font-bold text-blue-800 mb-2 uppercase">Apply Changes To:</p>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="rateScope" value="future" checked class="text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Tomorrow / Future Orders</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="rateScope" value="today" class="text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">Update Today's Orders (Pending/Drafts)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="customerManager.saveRates()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium w-full">Save Rates</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="p-5 border-b bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Add Staff Member</h3>
+                <button onclick="settingsManager.closeEmployeeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Name</label>
+                    <input type="text" id="empName" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Mobile Number</label>
+                    <input type="tel" id="empPhone" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-500 mb-1">Designation</label>
+                    <input type="text" id="empRole" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g. Driver, Helper">
+                </div>
+                <button onclick="settingsManager.saveEmployee()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Add Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- TOAST NOTIFICATION SYSTEM ---
+        const showToast = (msg, type='success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800';
+            const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+            
+            toast.className = `${color} text-white px-6 py-4 rounded-lg shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[300px] pointer-events-auto`;
+            toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // --- DATA STORE ---
+        const store = {
+            data: {
+                customers: JSON.parse(localStorage.getItem('dairy_customers')) || [
+                    { id: 'C1001', name: 'Sharma Household', phone: '9876543210', address: 'Plot 45, Colony A', dues: 450, status: 'Active', customRates: {} },
+                ],
+                products: JSON.parse(localStorage.getItem('dairy_products')) || [
+                    { id: 'p1', name: 'Full Cream', price: 64, unit: 'L' },
+                    { id: 'p2', name: 'Toned Milk', price: 54, unit: 'L' }
+                ],
+                expenseCategories: JSON.parse(localStorage.getItem('dairy_categories')) || ['Operational', 'Purchase', 'Maintenance', 'Salary', 'Advance'],
+                employees: JSON.parse(localStorage.getItem('dairy_employees')) || [],
+                orders: JSON.parse(localStorage.getItem('dairy_orders')) || [],
+                payments: JSON.parse(localStorage.getItem('dairy_payments')) || [],
+                expenses: JSON.parse(localStorage.getItem('dairy_expenses')) || []
+            },
+            save(key) {
+                localStorage.setItem(`dairy_${key}`, JSON.stringify(this.data[key]));
+            },
+            migrate() {
+                // Migrate Employees from String Array to Object Array if needed
+                if (this.data.employees.length > 0 && typeof this.data.employees[0] === 'string') {
+                    console.log("Migrating employee data...");
+                    this.data.employees = this.data.employees.map((name, index) => ({
+                        id: 'E' + (100 + index),
+                        name: name,
+                        phone: '',
+                        role: 'Staff'
+                    }));
+                    this.save('employees');
+                }
+            }
+        };
+        store.migrate();
+
+        // --- CHART CONTROLLER ---
+        let salesChartInstance = null;
+        const chartManager = {
+            render(selectedDateStr) {
+                const ctx = document.getElementById('salesChart');
+                if(!ctx) return;
+                
+                const selectedDate = new Date(selectedDateStr);
+                const labels = [];
+                const dataPoints = [];
+                for(let i=6; i>=0; i--) {
+                    const d = new Date(selectedDate);
+                    d.setDate(d.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    labels.push(d.toLocaleDateString('en-IN', {weekday:'short'}));
+                    
+                    const dailyTotal = store.data.orders
+                        .filter(o => o.date === dateStr)
+                        .reduce((sum, o) => sum + o.total, 0);
+                    dataPoints.push(dailyTotal);
+                }
+
+                if(salesChartInstance) salesChartInstance.destroy();
+                
+                salesChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Sales (₹)',
+                            data: dataPoints,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, grid: { display:false } }, x: { grid: { display: false } } }
+                    }
+                });
+            }
+        };
+
+        // --- AUTH & APP ---
+        const auth = {
+            login(e) {
+                e.preventDefault();
+                document.getElementById('loginScreen').classList.add('hidden');
+                app.init();
+            },
+            logout() { location.reload(); }
+        };
+
+        const app = {
+            init() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('dashboardDate').value = today;
+                document.getElementById('orderDate').value = today;
+                document.querySelectorAll('input[type="date"]').forEach(el => {
+                    if(!el.value) el.value = today;
+                });
+                this.renderDashboard();
+                router.navigate('dashboard');
+            },
+            toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            },
+            changeDate(days) {
+                const input = document.getElementById('dashboardDate');
+                const current = new Date(input.value);
+                current.setDate(current.getDate() + days);
+                input.value = current.toISOString().split('T')[0];
+                this.renderDashboard();
+            },
+            setDateYesterday() {
+                const input = document.getElementById('dashboardDate');
+                const y = new Date();
+                y.setDate(y.getDate() - 1);
+                input.value = y.toISOString().split('T')[0];
+                this.renderDashboard();
+            },
+            renderDashboard() {
+                const selectedDateStr = document.getElementById('dashboardDate').value;
+                if(!selectedDateStr) return; 
+
+                const todayStr = new Date().toISOString().split('T')[0];
+                const dObj = new Date(selectedDateStr);
+                document.getElementById('dashDateLabel').innerText = dObj.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('todayBadge').classList.toggle('hidden', selectedDateStr !== todayStr);
+
+                // 1. Calculate Revenue (Draft + Finalized for visibility)
+                const todaysRevenue = store.data.orders
+                    .filter(o => o.date === selectedDateStr)
+                    .reduce((s, o) => s + o.total, 0);
+
+                // 2. Calculate Finalized Revenue Only (For Opening Balance Math)
+                const todaysFinalizedRevenue = store.data.orders
+                    .filter(o => o.date === selectedDateStr && o.status === 'finalized')
+                    .reduce((s, o) => s + o.total, 0);
+
+                // 3. Calculate Payments
+                const todaysCollection = store.data.payments
+                    .filter(p => p.date === selectedDateStr)
+                    .reduce((sum, p) => sum + p.amount, 0);
+
+                // 4. Current Live Dues
+                const currentTotalDues = store.data.customers.reduce((sum, c) => sum + (c.dues || 0), 0);
+
+                // 5. Opening Balance Logic (FIXED)
+                // Opening Balance = (Current Total Dues) + (Today's Payments) - (Today's FINALIZED Orders)
+                // We ignore Draft orders because they haven't been added to Customer Dues yet.
+                const openingDues = currentTotalDues + todaysCollection - todaysFinalizedRevenue;
+
+                // Update DOM Cards
+                document.getElementById('dash-revenue-today').innerText = '₹' + todaysRevenue.toLocaleString();
+                document.getElementById('dash-dues-prev').innerText = '₹' + openingDues.toLocaleString();
+                document.getElementById('dash-dues-total').innerText = '₹' + currentTotalDues.toLocaleString();
+                
+                const activeCust = store.data.customers.filter(c => c.status === 'Active').length;
+                document.getElementById('dash-active-customers').innerText = activeCust;
+
+                // Update Sales Chart
+                chartManager.render(selectedDateStr);
+
+                // Dues Breakdown
+                const highDuesList = document.getElementById('highDuesList');
+                highDuesList.innerHTML = '';
+                const defaulters = store.data.customers.filter(c => c.dues > 0).sort((a,b) => b.dues - a.dues).slice(0, 10);
+                
+                if(defaulters.length === 0) {
+                    highDuesList.innerHTML = '<div class="text-center text-green-600 p-4">No pending dues!</div>';
+                } else {
+                    highDuesList.innerHTML = '<table class="w-full text-sm text-left"><thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0"><tr><th class="p-2">Name</th><th class="p-2 text-right">Due</th></tr></thead><tbody class="divide-y">';
+                    defaulters.forEach(c => {
+                        highDuesList.innerHTML += `<tr><td class="p-2 font-medium">${c.name}</td><td class="p-2 text-right font-bold text-red-600">₹${c.dues}</td></tr>`;
+                    });
+                    highDuesList.innerHTML += '</tbody></table>';
+                }
+            }
+        };
+
+        const router = {
+            navigate(viewId) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                const target = document.getElementById(viewId);
+                if(target) {
+                    target.classList.remove('hidden');
+                    document.querySelectorAll('.nav-item').forEach(el => {
+                        el.classList.toggle('bg-slate-800', el.dataset.target === viewId);
+                        el.classList.toggle('text-white', el.dataset.target === viewId);
+                    });
+                    
+                    if(viewId === 'dashboard') {
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('dashboardDate').value = today;
+                        app.renderDashboard();
+                    }
+                    if(viewId === 'customers') customerManager.renderList();
+                    if(viewId === 'orders') orderManager.render();
+                    if(viewId === 'billing') billingManager.init();
+                    if(viewId === 'settings') settingsManager.render();
+                    if(viewId === 'expenses') expenseManager.render();
+                    if(viewId === 'reports') reportManager.init();
+                    
+                    if(window.innerWidth < 768) {
+                        document.getElementById('sidebar').classList.add('-translate-x-full');
+                        document.getElementById('sidebarOverlay').classList.add('hidden');
+                    }
+                }
+            }
+        };
+
+        // --- CUSTOMER MANAGER ---
+        const customerManager = {
+            renderList() {
+                const term = document.getElementById('customerSearch').value.toLowerCase();
+                const sort = document.getElementById('customerSort').value;
+                const tbody = document.getElementById('customerTableBody');
+                tbody.innerHTML = '';
+                
+                let list = store.data.customers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+                
+                if(sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
+                else if(sort === 'dues_high') list.sort((a,b) => b.dues - a.dues);
+                else if(sort === 'dues_low') list.sort((a,b) => a.dues - b.dues);
+
+                list.forEach(c => {
+                    const hasCustomRates = c.customRates && Object.keys(c.customRates).length > 0;
+                    const rateStatus = hasCustomRates 
+                        ? `<span class="text-purple-600 font-bold text-xs bg-purple-50 px-2 py-1 rounded">Custom</span>` 
+                        : `<span class="text-slate-500 font-medium text-xs bg-slate-100 px-2 py-1 rounded">Standard</span>`;
+                        
+                    const duesColor = c.dues > 1000 ? 'text-red-600 bg-red-50' : (c.dues > 0 ? 'text-orange-600' : 'text-green-600');
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-slate-50";
+                    tr.innerHTML = `
+                        <td class="p-4">
+                            <div class="font-bold text-slate-800 flex items-center">${c.name}</div>
+                            <div class="text-xs text-slate-400 font-mono">${c.id}</div>
+                        </td>
+                        <td class="p-4 text-slate-600">
+                            <div>${c.phone}</div>
+                            <div class="text-xs text-slate-400 truncate w-32">${c.address || '-'}</div>
+                        </td>
+                        <td class="p-4 text-right">
+                            <span class="font-bold px-2 py-1 rounded ${duesColor}">₹${c.dues}</span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <div class="flex items-center justify-center">${rateStatus}</div>
+                        </td>
+                        <td class="p-4 text-right flex justify-end gap-2">
+                            <button onclick="customerManager.openRates('${c.id}')" class="text-purple-600 bg-purple-50 hover:bg-purple-100 p-2 rounded-lg text-xs font-bold">Rates</button>
+                            <button onclick="customerManager.edit('${c.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg"><i class="fas fa-edit"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+            openModal() {
+                document.getElementById('customerModal').classList.remove('hidden');
+                document.getElementById('modalTitle').innerText = 'Add New Customer';
+                document.getElementById('custId').value = '';
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+                document.getElementById('custAddress').value = '';
+                document.getElementById('dupWarning').classList.add('hidden');
+            },
+            closeModal() { document.getElementById('customerModal').classList.add('hidden'); },
+            checkDuplicate(phone) {
+                const match = store.data.customers.find(c => c.phone === phone && c.id !== document.getElementById('custId').value);
+                const warn = document.getElementById('dupWarning');
+                if (match) warn.classList.remove('hidden'); else warn.classList.add('hidden');
+            },
+            save() {
+                const id = document.getElementById('custId').value;
+                const name = document.getElementById('custName').value;
+                const phone = document.getElementById('custPhone').value;
+                const address = document.getElementById('custAddress').value;
+                
+                if(!name || !phone) return showToast("Name and Phone required", 'error');
+
+                if (id) {
+                    const idx = store.data.customers.findIndex(c => c.id === id);
+                    if(idx !== -1) store.data.customers[idx] = { ...store.data.customers[idx], name, phone, address };
+                } else {
+                    const newId = 'C' + (1000 + store.data.customers.length + 1);
+                    store.data.customers.push({ id: newId, name, phone, address, dues: 0, status: 'Active', customRates: {} });
+                }
+                store.save('customers');
+                this.closeModal();
+                this.renderList();
+                showToast('Customer Saved Successfully');
+            },
+            edit(id) {
+                const c = store.data.customers.find(c => c.id === id);
+                if(!c) return;
+                this.openModal();
+                document.getElementById('modalTitle').innerText = 'Edit Customer';
+                document.getElementById('custId').value = c.id;
+                document.getElementById('custName').value = c.name;
+                document.getElementById('custPhone').value = c.phone;
+                document.getElementById('custAddress').value = c.address;
+            },
+            openRates(id) {
+                const c = store.data.customers.find(c => c.id === id);
+                document.getElementById('rateModal').classList.remove('hidden');
+                document.getElementById('rateCustName').innerText = c.name;
+                document.getElementById('rateCustId').value = c.id;
+                
+                const restoreBtn = document.getElementById('btnRestoreRates');
+                const hasCustom = c.customRates && Object.keys(c.customRates).length > 0;
+                restoreBtn.classList.toggle('hidden', !hasCustom);
+                if(hasCustom) restoreBtn.onclick = () => customerManager.restoreStandardRates(c.id);
+
+                const container = document.getElementById('rateInputs');
+                container.innerHTML = '';
+                
+                store.data.products.forEach(p => {
+                    const currentRate = (c.customRates && c.customRates[p.id]) ? c.customRates[p.id] : '';
+                    const isCustom = currentRate !== '' && currentRate != p.price;
+                    const styleClass = isCustom ? "border-blue-500 bg-blue-50" : "border-slate-200";
+                    
+                    container.innerHTML += `
+                        <div class="flex justify-between items-center bg-white p-3 rounded border ${styleClass}">
+                            <div>
+                                <div class="font-bold text-sm text-slate-700">${p.name}</div>
+                                <div class="text-xs font-semibold text-slate-400">Standard Rate: ₹${p.price}</div>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] text-slate-500 uppercase font-extrabold mb-1">${isCustom ? 'Custom Rate' : 'Standard'}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-sm font-bold text-slate-600">₹</span>
+                                    <input id="rate_${p.id}" type="number" value="${currentRate}" placeholder="${p.price}" class="w-20 border rounded p-1 text-center text-sm font-bold text-slate-800">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+            saveRates() {
+                const cid = document.getElementById('rateCustId').value;
+                const c = store.data.customers.find(x => x.id === cid);
+                const scope = document.querySelector('input[name="rateScope"]:checked').value; // 'future' or 'today'
+                
+                if(!c.customRates) c.customRates = {};
+                
+                // 1. Update Customer Rates in Profile
+                store.data.products.forEach(p => {
+                    const val = document.getElementById(`rate_${p.id}`).value;
+                    if(val && val !== '') c.customRates[p.id] = parseFloat(val);
+                    else delete c.customRates[p.id];
+                });
+                store.save('customers');
+
+                // 2. Handle "Update Today" Logic
+                if(scope === 'today') {
+                    const today = new Date().toISOString().split('T')[0];
+                    const order = store.data.orders.find(o => o.customerId === cid && o.date === today);
+                    
+                    if(order) {
+                        if(order.status === 'finalized') {
+                            showToast("Order already finalized. Rate updated for future only.", "error");
+                        } else {
+                            // Update prices in the Draft order
+                            let newTotal = 0;
+                            order.items.forEach(item => {
+                                const prod = store.data.products.find(p => p.name === item.name);
+                                if(prod) {
+                                    // Use new custom rate or standard rate
+                                    const newPrice = c.customRates[prod.id] || prod.price;
+                                    item.price = newPrice;
+                                    newTotal += item.quantity * newPrice;
+                                }
+                            });
+                            order.total = newTotal;
+                            store.save('orders');
+                            showToast("Rates updated for profile & today's draft.");
+                        }
+                    } else {
+                        showToast("Rates updated (No order found for today).");
+                    }
+                } else {
+                    showToast('Rates Updated for Future Orders');
+                }
+
+                document.getElementById('rateModal').classList.add('hidden');
+                this.renderList();
+            },
+            restoreStandardRates(id) {
+                if(confirm('Restore standard rates for this customer?')) {
+                    const c = store.data.customers.find(x => x.id === id);
+                    if(c) {
+                        c.customRates = {};
+                        store.save('customers');
+                        showToast('Standard Rates Restored');
+                        document.getElementById('rateModal').classList.add('hidden');
+                        this.renderList();
+                    }
+                }
+            }
+        };
+
+        // --- ORDER MANAGER ---
+        const orderManager = {
+            render() {
+                const dateInput = document.getElementById('orderDate').value;
+                document.getElementById('printDate').innerText = new Date(dateInput).toLocaleDateString();
+                document.getElementById('orderListDate').innerText = `For: ${new Date(dateInput).toLocaleDateString()}`;
+                
+                const h = document.getElementById('routeHeaderRow');
+                h.innerHTML = '<th class="p-4 w-1/3">Customer</th>' + store.data.products.map(p => `<th class="p-4 w-24 text-center">${p.name}</th>`).join('') + '<th class="p-4 text-center no-print">Status</th>';
+                
+                const tbody = document.getElementById('orderTableBody');
+                tbody.innerHTML = '';
+                let count = 0;
+                const existingOrders = store.data.orders.filter(o => o.date === dateInput);
+                
+                store.data.customers.forEach(c => {
+                    count++;
+                    const order = existingOrders.find(o => o.customerId === c.id);
+                    
+                    const inputs = store.data.products.map(p => {
+                         let qty = '';
+                         if (order) {
+                             const item = order.items.find(i => i.name === p.name);
+                             if(item) qty = item.quantity;
+                         }
+                         return `<td class="p-4 text-center"><input type="number" id="ord_${c.id}_${p.id}" min="0" value="${qty}" class="w-16 border border-slate-300 rounded text-center py-1 bg-slate-50 focus:bg-white quantity-input" data-pid="${p.id}" placeholder="0" oninput="orderManager.updateTotals()"></td>`
+                    }).join('');
+
+                    const status = order 
+                        ? (order.status === 'finalized' ? `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Finalized</span>` : `<span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Draft</span>`)
+                        : `<span class="text-xs text-slate-400">Pending</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-50";
+                    tr.innerHTML = `
+                        <td class="p-4">
+                            <div class="font-bold text-slate-700">${c.name}</div>
+                            <div class="text-xs font-bold text-red-500">Due: ₹${c.dues}</div>
+                            <div class="text-xs text-slate-500">${c.address || ''}</div>
+                        </td>
+                        ${inputs}
+                        <td class="p-4 text-center w-24 no-print" id="status_${c.id}">${status}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                this.updateTotals();
+            },
+            changeDate(days) {
+                const input = document.getElementById('orderDate');
+                const current = new Date(input.value);
+                current.setDate(current.getDate() + days);
+                input.value = current.toISOString().split('T')[0];
+                this.render();
+            },
+            updateTotals() {
+                const totals = {};
+                store.data.products.forEach(p => totals[p.id] = 0);
+                document.querySelectorAll('.quantity-input').forEach(input => {
+                    const pid = input.dataset.pid;
+                    const val = parseInt(input.value) || 0;
+                    if(totals[pid] !== undefined) totals[pid] += val;
+                });
+                const tfoot = document.getElementById('orderTableFooter');
+                let footerHtml = '<tr class="bg-slate-100"><td class="p-4 text-right">Total Load:</td>';
+                store.data.products.forEach(p => {
+                    footerHtml += `<td class="p-4 text-center font-bold text-blue-600">${totals[p.id]} ${p.unit || ''}</td>`;
+                });
+                footerHtml += '<td class="no-print"></td></tr>';
+                tfoot.innerHTML = footerHtml;
+            },
+            fillYesterday() {
+                const currentDate = document.getElementById('orderDate').value;
+                const d = new Date(currentDate);
+                d.setDate(d.getDate() - 1);
+                const prevDate = d.toISOString().split('T')[0];
+                
+                if(!confirm(`Copy quantities from ${prevDate} to ${currentDate}?`)) return;
+                
+                const prevOrders = store.data.orders.filter(o => o.date === prevDate);
+                if (prevOrders.length === 0) return showToast("No orders found for previous day", "error");
+
+                prevOrders.forEach(order => {
+                    order.items.forEach(item => {
+                        const prod = store.data.products.find(p => p.name === item.name);
+                        if(prod) {
+                            const input = document.getElementById(`ord_${order.customerId}_${prod.id}`);
+                            if(input) input.value = item.quantity;
+                        }
+                    });
+                });
+                this.updateTotals();
+                showToast("Filled from history");
+            },
+            saveDraft() {
+                const date = document.getElementById('orderDate').value;
+                
+                // Remove existing DRAFT orders. Preserve finalized ones to prevent overwrite of accounting.
+                const finalized = store.data.orders.filter(o => o.date === date && o.status === 'finalized');
+                store.data.orders = store.data.orders.filter(o => o.date !== date);
+                store.data.orders.push(...finalized);
+
+                let savedCount = 0;
+                store.data.customers.forEach(c => {
+                    // Skip if already finalized
+                    if (finalized.find(f => f.customerId === c.id)) return;
+
+                    const items = [];
+                    let total = 0;
+                    store.data.products.forEach(p => {
+                        const input = document.getElementById(`ord_${c.id}_${p.id}`);
+                        const q = input ? input.value : 0;
+                        if(q > 0) {
+                            const price = (c.customRates && c.customRates[p.id]) ? c.customRates[p.id] : p.price;
+                            items.push({ name: p.name, quantity: parseInt(q), price: price });
+                            total += parseInt(q) * price;
+                        }
+                    });
+
+                    if(items.length > 0) {
+                        store.data.orders.push({
+                            id: `ORD-${Date.now()}-${c.id}`,
+                            customerId: c.id,
+                            customerName: c.name,
+                            date: date,
+                            items: items,
+                            total: total,
+                            status: 'draft'
+                        });
+                        savedCount++;
+                        const statusCell = document.getElementById(`status_${c.id}`);
+                        if(statusCell) statusCell.innerHTML = `<span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Draft</span>`;
+                    }
+                });
+                store.save('orders');
+                showToast(`Draft saved for ${savedCount} orders.`);
+            },
+            finalizeDay() {
+                const date = document.getElementById('orderDate').value;
+                // Get Drafts Only
+                const drafts = store.data.orders.filter(o => o.date === date && o.status === 'draft');
+                
+                if(drafts.length === 0) return showToast("No drafts to finalize.", "error");
+                if(!confirm(`Finalize ${drafts.length} orders for ${date}? Added to Dues.`)) return;
+
+                let totalAdded = 0;
+                drafts.forEach(order => {
+                    const cust = store.data.customers.find(x => x.id === order.customerId);
+                    if(cust) {
+                        cust.dues += order.total;
+                        totalAdded += order.total;
+                    }
+                    order.status = 'finalized';
+                    const statusCell = document.getElementById(`status_${order.customerId}`);
+                    if(statusCell) statusCell.innerHTML = `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Finalized</span>`;
+                });
+
+                store.save('orders');
+                store.save('customers');
+                showToast(`Day Finalized! Added ₹${totalAdded} to Dues.`);
+                app.renderDashboard(); // Update Dashboard opening/closing balances
+            }
+        };
+
+        // --- BILLING MANAGER ---
+        const billingManager = {
+            init() {
+                this.renderDropdowns();
+                this.renderHistory();
+            },
+            renderDropdowns() {
+                const paySel = document.getElementById('payCustomer');
+                const invSel = document.getElementById('invoiceCustomer');
+                const repSel = document.getElementById('repCustomer');
+                
+                let opts = '<option value="">Select Customer</option>';
+                store.data.customers.forEach(c => opts += `<option value="${c.id}">${c.name}</option>`);
+                
+                paySel.innerHTML = opts;
+                invSel.innerHTML = opts;
+                repSel.innerHTML = opts;
+
+                // Employee Dropdown (using object properties now)
+                const colSel = document.getElementById('payCollector');
+                colSel.innerHTML = '<option value="">-- Self / Owner --</option>';
+                store.data.employees.forEach(e => colSel.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`);
+            },
+            renderHistory() {
+                const tbody = document.getElementById('paymentHistoryBody');
+                tbody.innerHTML = '';
+                [...store.data.payments].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 50).forEach(p => {
+                    const c = store.data.customers.find(x => x.id === p.customerId);
+                    const collector = p.collectedBy ? `<div class="text-xs text-blue-600"><i class="fas fa-user-tag mr-1"></i>${p.collectedBy}</div>` : '';
+                    const note = p.note ? `<div class="text-xs text-slate-400 italic">"${p.note}"</div>` : '';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 border-b";
+                    tr.innerHTML = `
+                        <td class="p-4 text-slate-500 text-xs">${p.date}</td>
+                        <td class="p-4 font-medium">${c?c.name:'Unknown'}</td>
+                        <td class="p-4">
+                            ${collector}
+                            ${note}
+                        </td>
+                        <td class="p-4 text-right font-bold text-green-600">₹${p.amount}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+            recordPayment(e) {
+                e.preventDefault();
+                const custId = document.getElementById('payCustomer').value;
+                const amount = parseFloat(document.getElementById('payAmount').value);
+                const date = document.getElementById('payDate').value;
+                const collector = document.getElementById('payCollector').value;
+                const note = document.getElementById('payNote').value;
+                
+                if(!custId || amount <= 0) return showToast('Invalid details', 'error');
+
+                const c = store.data.customers.find(c => c.id === custId);
+                if(c) {
+                    c.dues -= amount;
+                    store.data.payments.push({ id: Date.now(), customerId: custId, amount: amount, date: date, collectedBy: collector, note: note });
+                    store.save('customers');
+                    store.save('payments');
+                    showToast('Payment Recorded');
+                    document.getElementById('payAmount').value = '';
+                    document.getElementById('payNote').value = '';
+                    this.init();
+                    app.renderDashboard();
+                }
+            },
+            generateInvoice() {
+                const cid = document.getElementById('invoiceCustomer').value;
+                if(!cid) return showToast('Select a customer', 'error');
+                
+                const c = store.data.customers.find(x => x.id === cid);
+                const orders = store.data.orders.filter(o => o.customerId === cid).sort((a,b) => new Date(b.date) - new Date(a.date));
+                const payments = store.data.payments.filter(p => p.customerId === cid).sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                document.getElementById('billing').classList.add('hidden');
+                document.getElementById('invoice-view').classList.remove('hidden');
+                
+                document.getElementById('inv-cust-name').innerText = c.name;
+                document.getElementById('inv-date').innerText = `Date: ${new Date().toLocaleDateString()}`;
+                
+                let html = `<div class="mb-4 text-right font-bold text-xl ${c.dues>0?'text-red-600':'text-green-600'} border p-4 inline-block float-right rounded">Current Dues: ₹${c.dues}</div>
+                            <h3 class="font-bold border-b mb-2">Recent Transactions</h3>
+                            <table class="w-full text-sm text-left mb-8">
+                            <thead class="bg-slate-100"><tr><th class="p-2">Date</th><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2 text-right">Amount</th></tr></thead><tbody>`;
+                
+                const allTx = [
+                    ...orders.map(o => ({ date: o.date, type: 'Order', desc: o.items.map(i=>`${i.quantity} ${i.name}`).join(', '), amt: o.total })),
+                    ...payments.map(p => ({ date: p.date, type: 'Payment', desc: 'Cash/Online', amt: -p.amount }))
+                ].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
+                
+                allTx.forEach(t => {
+                    html += `<tr>
+                        <td class="p-2 border-b">${t.date}</td>
+                        <td class="p-2 border-b font-bold ${t.type==='Payment'?'text-green-600':'text-slate-600'}">${t.type}</td>
+                        <td class="p-2 border-b">${t.desc}</td>
+                        <td class="p-2 border-b text-right">${t.amt > 0 ? '₹'+t.amt : '-₹'+Math.abs(t.amt)}</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table><p class="text-center text-xs text-slate-400 mt-8">Thank you for your business!</p>`;
+                document.getElementById('invoice-content').innerHTML = html;
+                
+                const waText = `Hello ${c.name}, your current outstanding balance is ₹${c.dues}.`;
+                const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(waText)}`;
+                document.getElementById('whatsappShareBtn').onclick = () => window.open(waLink, '_blank');
+            }
+        };
+
+        // --- EXPENSE MANAGER ---
+        const expenseManager = {
+            render() {
+                this.renderDropdowns();
+                this.renderLog();
+            },
+            renderDropdowns() {
+                const s = document.getElementById('expCategory');
+                s.innerHTML = '';
+                store.data.expenseCategories.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`);
+
+                const emp = document.getElementById('expEmployee');
+                emp.innerHTML = '<option value="">-- Other / Vendor --</option>';
+                store.data.employees.forEach(e => emp.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`);
+            },
+            renderLog() {
+                const tbody = document.getElementById('expenseTableBody');
+                tbody.innerHTML = '';
+                [...store.data.expenses].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(e => {
+                    const employeeTag = e.employeeId ? `<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"><i class="fas fa-user mr-1"></i>${e.employeeId}</span>` : '';
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-slate-50";
+                    tr.innerHTML = `
+                        <td class="p-4 text-slate-500">${e.date}</td>
+                        <td class="p-4 font-medium">
+                            <div class="text-slate-800">${e.title}</div>
+                            <div class="mt-1">
+                                <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 border">${e.category}</span>
+                                ${employeeTag}
+                            </div>
+                        </td>
+                        <td class="p-4 text-right font-bold text-red-500">₹${e.amount}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+            add(e) {
+                e.preventDefault();
+                const title = document.getElementById('expTitle').value;
+                const amt = parseFloat(document.getElementById('expAmount').value);
+                const cat = document.getElementById('expCategory').value;
+                const date = document.getElementById('expDate').value;
+                const emp = document.getElementById('expEmployee').value; // Stores Name now
+                
+                if(!title || amt <= 0) return showToast('Invalid details', 'error');
+                
+                store.data.expenses.push({ id: Date.now(), title, amount: amt, category: cat, date, employeeId: emp });
+                store.save('expenses');
+                showToast('Expense Added');
+                document.getElementById('expTitle').value = '';
+                document.getElementById('expAmount').value = '';
+                this.renderLog();
+            }
+        };
+
+        // --- REPORT MANAGER (ENHANCED) ---
+        const reportManager = {
+            init() { 
+                billingManager.renderDropdowns(); // Populate customers
+                // Populate employees in report section
+                const rEmp = document.getElementById('repEmployee');
+                rEmp.innerHTML = '<option value="">All Employees</option>';
+                store.data.employees.forEach(e => rEmp.innerHTML += `<option value="${e.name}">${e.name}</option>`);
+            },
+            toggleInputs() {
+                const t = document.getElementById('reportType').value;
+                document.getElementById('repCustomerContainer').classList.toggle('hidden', t !== 'customer_monthly');
+                document.getElementById('repEmployeeContainer').classList.toggle('hidden', t !== 'expense_report');
+            },
+            generate() {
+                const type = document.getElementById('reportType').value;
+                const start = document.getElementById('repStartDate').value;
+                const end = document.getElementById('repEndDate').value;
+                const cid = document.getElementById('repCustomer').value;
+                const eid = document.getElementById('repEmployee').value; // Employee filter
+                const out = document.getElementById('reportOutput');
+                
+                if(type === 'financial') {
+                    const rev = store.data.orders.filter(o => o.date >= start && o.date <= end).reduce((sum, o) => sum + o.total, 0);
+                    const exp = store.data.expenses.filter(e => e.date >= start && e.date <= end).reduce((sum, e) => sum + e.amount, 0);
+                    const profit = rev - exp;
+                    out.innerHTML = `
+                        <h3 class="font-bold text-center text-lg mb-4">P&L Statement (${start} to ${end})</h3>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-green-50 p-4 rounded"><div class="text-xs text-green-800">Revenue</div><div class="text-xl font-bold text-green-600">₹${rev}</div></div>
+                            <div class="bg-red-50 p-4 rounded"><div class="text-xs text-red-800">Expenses</div><div class="text-xl font-bold text-red-600">₹${exp}</div></div>
+                            <div class="bg-blue-50 p-4 rounded"><div class="text-xs text-blue-800">Net Profit</div><div class="text-xl font-bold ${profit>=0?'text-green-600':'text-red-600'}">₹${profit}</div></div>
+                        </div>`;
+                } else if(type === 'expense_report') {
+                    let exps = store.data.expenses.filter(e => e.date >= start && e.date <= end);
+                    // Filter by Employee if selected
+                    if(eid) {
+                        exps = exps.filter(e => e.employeeId === eid);
+                    }
+                    
+                    if(exps.length === 0) return out.innerHTML = `<div class="text-center text-slate-400">No expenses found for selection.</div>`;
+                    
+                    let html = `<h3 class="font-bold mb-4">Expense Report ${eid ? '- ' + eid : ''} (${start} to ${end})</h3>`;
+                    html += `<table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-2">Date</th><th class="p-2">Category</th><th class="p-2">Desc/PaidTo</th><th class="p-2 text-right">Amount</th></tr></thead><tbody>`;
+                    
+                    let total = 0;
+                    exps.forEach(e => {
+                        html += `<tr><td class="p-2 border-b">${e.date}</td><td class="p-2 border-b">${e.category}</td><td class="p-2 border-b">${e.title} ${e.employeeId?`(${e.employeeId})`:''}</td><td class="p-2 border-b text-right">₹${e.amount}</td></tr>`;
+                        total += e.amount;
+                    });
+                    
+                    html += `</tbody><tfoot><tr><td colspan="3" class="p-2 font-bold text-right">Total:</td><td class="p-2 font-bold text-right">₹${total}</td></tr></tfoot></table>`;
+                    out.innerHTML = html;
+
+                } else {
+                    let items = store.data.orders.filter(o => o.date >= start && o.date <= end);
+                    if(type === 'customer_monthly') items = items.filter(o => o.customerId === cid);
+                    
+                    if(items.length === 0) return out.innerHTML = `<div class="text-center text-slate-400">No records.</div>`;
+                    
+                    let html = `<h3 class="font-bold mb-4">Details</h3><table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-2">Date</th><th class="p-2">Desc</th><th class="p-2 text-right">Amt</th></tr></thead><tbody>`;
+                    let total = 0;
+                    items.forEach(i => {
+                        html += `<tr><td class="p-2 border-b">${i.date}</td><td class="p-2 border-b">${type==='day_book'?i.customerName:''} ${i.items.map(x=>`${x.quantity}${x.name.charAt(0)}`).join(',')}</td><td class="p-2 border-b text-right">₹${i.total}</td></tr>`;
+                        total += i.total;
+                    });
+                    html += `</tbody><tfoot><tr><td colspan="2" class="p-2 font-bold text-right">Total:</td><td class="p-2 font-bold text-right">₹${total}</td></tr></tfoot></table>`;
+                    out.innerHTML = html;
+                }
+            }
+        };
+
+        // --- SETTINGS & DATA MANAGER ---
+        const settingsManager = {
+            render() {
+                // Products
+                const c = document.getElementById('productSettingsList');
+                c.innerHTML = '';
+                store.data.products.forEach(p => {
+                    c.innerHTML += `
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+                            <button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                            <div class="font-bold text-slate-700 mb-2">${p.name}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm">₹</span>
+                                <input type="number" class="w-full border rounded p-1 text-sm" value="${p.price}" onchange="settingsManager.updatePrice('${p.id}', this.value)">
+                            </div>
+                        </div>`;
+                });
+
+                // Employees (Updated Display)
+                const e = document.getElementById('employeeList');
+                e.innerHTML = '';
+                store.data.employees.forEach((emp, index) => {
+                    e.innerHTML += `
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded border">
+                            <div>
+                                <div class="font-bold text-sm text-slate-800">${emp.name}</div>
+                                <div class="text-xs text-slate-500">${emp.role} • ${emp.phone || 'No Phone'}</div>
+                            </div>
+                            <button onclick="settingsManager.delEmployee(${index})" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+                });
+            },
+            addProduct() {
+                const name = prompt("Product Name:");
+                const price = prompt("Standard Price (₹):");
+                if(name && price) {
+                    const id = 'p' + Date.now();
+                    store.data.products.push({ id, name, price: parseFloat(price), unit: 'Unit' });
+                    store.save('products');
+                    this.render();
+                    showToast('Product Added');
+                }
+            },
+            delProduct(id) {
+                if(confirm('Delete product?')) {
+                    store.data.products = store.data.products.filter(p => p.id !== id);
+                    store.save('products');
+                    this.render();
+                }
+            },
+            updatePrice(id, val) {
+                const p = store.data.products.find(x => x.id === id);
+                if(p) { p.price = parseFloat(val); store.save('products'); showToast('Price Updated'); }
+            },
+            
+            // New Employee Modal Functions
+            openEmployeeModal() {
+                document.getElementById('employeeModal').classList.remove('hidden');
+                document.getElementById('empName').value = '';
+                document.getElementById('empPhone').value = '';
+                document.getElementById('empRole').value = '';
+            },
+            closeEmployeeModal() {
+                document.getElementById('employeeModal').classList.add('hidden');
+            },
+            saveEmployee() {
+                const name = document.getElementById('empName').value;
+                const phone = document.getElementById('empPhone').value;
+                const role = document.getElementById('empRole').value;
+                
+                if(!name) return showToast("Name is required", "error");
+                
+                store.data.employees.push({
+                    id: 'E' + (100 + store.data.employees.length),
+                    name: name,
+                    phone: phone,
+                    role: role || 'Staff'
+                });
+                store.save('employees');
+                this.closeEmployeeModal();
+                this.render();
+                showToast('Staff Added');
+            },
+            delEmployee(index) {
+                if(confirm('Remove this employee?')) {
+                    store.data.employees.splice(index, 1);
+                    store.save('employees');
+                    this.render();
+                }
+            }
+        };
+
+        const dataManager = {
+            backup() {
+                const blob = new Blob([JSON.stringify(store.data)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dairy_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            },
+            restore(input) {
+                const file = input.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            Object.keys(data).forEach(k => localStorage.setItem(`dairy_${k}`, JSON.stringify(data[k])));
+                            showToast('Data Restored! Reloading...');
+                            setTimeout(() => location.reload(), 1500);
+                        } catch(err) { showToast('Invalid File', 'error'); }
+                    };
+                    reader.readAsText(file);
+                }
+            }
+        };
+
+        window.onload = () => document.getElementById('username').focus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Manager Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .sidebar-transition { transition: all 0.3s ease-in-out; }
+        
+        /* UI Tweak: Remove spinners from number inputs for cleaner look & arrow key nav */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print Styles */
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            body { 
+                background: white; 
+                height: auto; 
+                overflow: visible; 
+                font-size: 12px;
+                -webkit-print-color-adjust: exact; 
+                color: black;
+            }
+            
+            /* UPDATED: Removed #reports from this list so it can be printed */
+            #sidebar, #loginScreen, #mobileHeader, #toast-container, #dashboard, #customers, #billing, #expenses, #settings, #sidebarOverlay { display: none; }
+            #mainContent { margin: 0; padding: 0; overflow: visible; width: 100%; background: white; }
+            
+            /* Ensure orders and reports are visible if active */
+            #orders, #reports { display: block !important; }
+            
+            /* FIX: Specific Print Styles for Reports 
+               Targeting #reportOutput to remove the p-8 padding and borders 
+               that cause too much top space and box-look in print.
+            */
+            #reports #reportOutput {
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                min-height: 0 !important;
+                width: 100% !important;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse !important;
+                border: 2px solid #000;
+            }
+            th, td {
+                border: 1px solid #000 !important;
+                padding: 4px !important;
+                text-align: center;
+                font-size: 11px;
+                border-radius: 0 !important;
+            }
+            th {
+                background-color: #e5e5e5 !important;
+                font-weight: bold;
+                -webkit-print-color-adjust: exact;
+            }
+            input {
+                border: none;
+                background: transparent;
+                width: 100%;
+                text-align: center;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 0;
+                margin: 0;
+            }
+            td:first-child, th:first-child {
+                text-align: left;
+                width: 150px;
+                font-weight: bold;
+                padding-left: 8px !important;
+            }
+            
+            #printHeader {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: flex-end;
+                margin-bottom: 10px;
+                padding-bottom: 5px;
+                border-bottom: 2px solid #000;
+            }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col md:flex-row text-slate-800 overflow-hidden">
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center fade-in">
+            <div class="mb-6">
+                <div class="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-4">
+                    <i class="fas fa-cow"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">Dairy Manager</h1>
+            </div>
+            <form onsubmit="auth.login(event)" class="space-y-4 text-left">
+                <div><label class="block text-sm font-medium text-slate-700 mb-1">Username</label><input type="text" id="username" class="w-full border border-slate-300 rounded-lg p-3 outline-none" placeholder="admin" value="admin"></div>
+                <div><label class="block text-sm font-medium text-slate-700 mb-1">Password</label><input type="password" id="password" class="w-full border border-slate-300 rounded-lg p-3 outline-none" placeholder="••••••" value="password"></div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
+        <div class="flex items-center gap-2"><i class="fas fa-cow text-blue-400 text-xl"></i><span class="font-bold text-lg">DairyMgr</span></div>
+        <button onclick="app.toggleSidebar()" class="text-white focus:outline-none"><i class="fas fa-bars text-xl"></i></button>
+    </div>
+
+    <aside class="fixed md:relative inset-y-0 left-0 w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none whitespace-nowrap overflow-hidden" id="sidebar">
+        <div class="p-5 border-b border-slate-800 flex justify-between items-center h-16">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <i class="fas fa-cow text-blue-400 text-xl flex-shrink-0 ml-1"></i>
+                <span class="font-bold text-lg tracking-wide sidebar-text">DairyMgr</span>
+            </div>
+            <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+             <button onclick="app.toggleSidebarDesktop()" class="hidden md:block text-slate-400 hover:text-white focus:outline-none" title="Toggle Menu">
+                <i class="fas fa-chevron-left transition-transform duration-300" id="collapseIcon"></i>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-1 mt-2 sidebar-text">Operations</p>
+            <button onclick="router.navigate('dashboard')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="dashboard" title="Dashboard"><i class="fas fa-home w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Dashboard</span></button>
+            <button onclick="router.navigate('orders')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="orders" title="Orders & Route"><i class="fas fa-truck w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Orders & Route</span></button>
+            <button onclick="router.navigate('customers')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="customers" title="Customers"><i class="fas fa-users w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Customers</span></button>
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-1 mt-4 sidebar-text">Finance</p>
+            <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="billing" title="Invoices & Payments"><i class="fas fa-file-invoice-dollar w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Billing</span></button>
+            <button onclick="router.navigate('expenses')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="expenses" title="Expenses"><i class="fas fa-wallet w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Expenses</span></button>
+            <button onclick="router.navigate('reports')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="reports" title="Reports"><i class="fas fa-chart-bar w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Reports</span></button>
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-1 mt-4 sidebar-text">System</p>
+            <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 text-slate-400 transition" data-target="settings" title="Settings"><i class="fas fa-cog w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Settings</span></button>
+        </nav>
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="auth.logout()" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm" title="Logout"><i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Logout</span></button>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto relative bg-slate-50 p-2 md:p-6 w-full custom-scrollbar" id="mainContent">
+        <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+        
+        <section id="dashboard" class="view-section fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800">Dashboard</h2>
+                    <p class="text-sm text-slate-500">Overview for <span id="dashDateLabel" class="font-bold"></span> <span id="todayBadge" class="hidden ml-2 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-sm">TODAY</span></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btnBackToday" onclick="app.goToToday()" class="hidden bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-200 transition shadow-sm mr-2"><i class="fas fa-calendar-day mr-1"></i> Today</button>
+                    <button onclick="app.setDateYesterday()" class="bg-white text-slate-600 border border-slate-300 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-50 transition shadow-sm">Yesterday</button>
+                    <div class="flex items-center bg-white p-1 rounded-lg border border-slate-300 shadow-sm">
+                        <button onclick="app.changeDate(-1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-left"></i></button>
+                        <input type="date" id="dashboardDate" class="text-slate-700 text-sm font-bold border-none focus:ring-0 outline-none bg-transparent cursor-pointer w-32" onchange="app.renderDashboard()">
+                        <button onclick="app.changeDate(1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-green-500 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <p class="text-xs font-bold text-slate-500 uppercase">Today's Sale (Finalized)</p>
+                        <span id="salesPct" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">0%</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-green-600 mt-1" id="dash-revenue-today">Loading...</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-slate-400">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Opening Balance</p>
+                    <h3 class="text-2xl font-bold text-slate-700 mt-1" id="dash-dues-prev">Loading...</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-red-500">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Total Dues (Live)</p>
+                    <h3 class="text-2xl font-bold text-red-600 mt-1" id="dash-dues-total">Loading...</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-t-4 border-purple-500">
+                    <p class="text-xs font-bold text-slate-500 uppercase">Active Customers</p>
+                    <h3 class="text-2xl font-bold text-purple-700 mt-1" id="dash-active-customers">0</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[400px] flex flex-col">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Top Defaulters (Pending Dues)</h3>
+                    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar" id="highDuesList"></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-[400px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700">Sales Trend</h3>
+                        <div class="flex gap-2">
+                            <button onclick="chartManager.setMode('week')" class="text-xs px-2 py-1 bg-slate-100 rounded hover:bg-slate-200 font-bold chart-btn" id="btn-week">Week</button>
+                            <button onclick="chartManager.setMode('month')" class="text-xs px-2 py-1 bg-slate-100 rounded hover:bg-slate-200 font-bold chart-btn" id="btn-month">Month</button>
+                        </div>
+                    </div>
+                    <div class="relative flex-1 w-full"><canvas id="salesChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="customers" class="view-section hidden fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Customers</h2>
+                <button onclick="customerManager.openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-lg shadow-blue-200 transition"><i class="fas fa-plus mr-2"></i> Add Customer</button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-4 justify-between">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="customerSearch" placeholder="Search customers..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500" onkeyup="customerManager.renderList()">
+                    </div>
+                    <select id="customerSort" class="border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" onchange="customerManager.renderList()">
+                        <option value="name">Sort by Name</option>
+                        <option value="dues_high">Sort by Dues (High-Low)</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                            <tr><th class="p-4">Customer Info</th><th class="p-4">Contact</th><th class="p-4 text-right">Outstanding</th><th class="p-4 text-center">Rates</th><th class="p-4 text-right">Actions</th></tr>
+                        </thead>
+                        <tbody id="customerTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="orders" class="view-section hidden fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 no-print">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Daily Route</h2>
+                    <p class="text-slate-500 text-sm">Manage deliveries and print route sheets.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <div class="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-300 shadow-sm">
+                        <button onclick="orderManager.changeDate(-1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-left"></i></button>
+                        <input type="date" id="orderDate" class="text-slate-700 text-sm font-bold border-none focus:ring-0 outline-none bg-transparent cursor-pointer" onchange="orderManager.render()">
+                        <button onclick="orderManager.changeDate(1)" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <button onclick="orderManager.fillYesterday()" class="bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-200 transition font-medium"><i class="fas fa-history mr-1"></i> Copy Prev</button>
+                    <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-print mr-2"></i> Print Sheet</button>
+                </div>
+            </div>
+            
+            <div id="printHeader" class="print-only mb-6">
+                <div class="text-xl font-bold text-black uppercase tracking-wide">Route Sheet</div>
+                <div class="text-sm font-bold text-black">Date: <span id="printDate"></span></div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 flex flex-col max-w-full">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 flex justify-between items-center no-print">
+                    <span>Order List <span class="text-xs font-normal text-slate-500 ml-2" id="orderListDate"></span></span>
+                    <div class="flex gap-2">
+                        <button onclick="orderManager.saveDraft()" class="text-xs bg-slate-200 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-300 font-bold">Save Changes</button>
+                        <button onclick="orderManager.finalizeDay()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 font-bold shadow-sm">Finalize</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar w-full">
+                    <table class="w-full text-left sheet-table min-w-[800px]">
+                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-bold border-b border-slate-200">
+                            <tr id="routeHeaderRow"></tr>
+                        </thead>
+                        <tbody id="orderTableBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <tfoot id="orderTableFooter" class="bg-slate-100 font-bold text-slate-700 text-sm border-t-2 border-slate-200"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="billing" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Billing & Payments</h2>
+            
+            <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
+                <div>
+                    <p class="text-xs font-bold text-indigo-800 uppercase">This Month's Collections</p>
+                    <h3 class="text-2xl font-bold text-indigo-600 mt-1" id="billingMonthTotal">₹0</h3>
+                </div>
+                <div class="text-right text-xs text-indigo-400">
+                    <span id="billingMonthName">...</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center"><i class="fas fa-hand-holding-usd text-green-500 mr-2"></i> Record Payment</h3>
+                        <form onsubmit="billingManager.recordPayment(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Customer</label>
+                                    <select id="payCustomer" class="w-full border-slate-300 rounded-lg p-2.5 bg-slate-50 border" required onchange="billingManager.showDue(this.value)"></select>
+                                    <p id="payCustomerDue" class="text-xs text-red-600 font-bold mt-1 text-right h-4"></p>
+                                </div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label><input type="number" id="payAmount" min="0" class="w-full border-slate-300 rounded-lg p-2.5 border" required></div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label><input type="date" id="payDate" class="w-full border-slate-300 rounded-lg p-2.5 border" required></div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Collected By</label><select id="payCollector" class="w-full border-slate-300 rounded-lg p-2.5 border"></select></div>
+                                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Note (Optional)</label><input type="text" id="payNote" placeholder="e.g. Cash, UPI Ref..." class="w-full border-slate-300 rounded-lg p-2.5 border"></div>
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition">Save Payment</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h3 class="font-bold text-blue-800 mb-2">Invoice Generator</h3>
+                        <div class="space-y-3">
+                            <select id="invoiceCustomer" class="w-full border-blue-200 rounded-lg p-2 text-sm bg-white"></select>
+                            <button onclick="billingManager.generateInvoice()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition">Generate Statement</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 class="font-bold text-slate-700">Payment History</h3></div>
+                        <div class="overflow-y-auto flex-1 custom-scrollbar">
+                            <table class="w-full text-left">
+                                <thead class="bg-white text-slate-500 text-xs uppercase sticky top-0 shadow-sm z-10"><tr><th class="p-4 bg-slate-50">Date</th><th class="p-4 bg-slate-50">Customer</th><th class="p-4 bg-slate-50">Details</th><th class="p-4 bg-slate-50 text-right">Amount</th></tr></thead>
+                                <tbody id="paymentHistoryBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="invoice-view" class="view-section hidden bg-white p-8 max-w-4xl mx-auto shadow-lg my-8 print:shadow-none print:w-full print:m-0">
+            <div class="flex justify-between items-start mb-8 border-b pb-4">
+                <div><h1 class="text-3xl font-bold text-slate-800">INVOICE</h1><p class="text-slate-500">Dairy Manager Pro</p></div>
+                <div class="text-right"><h2 class="text-xl font-bold" id="inv-cust-name">Customer Name</h2><p class="text-sm text-slate-500" id="inv-date">Date: 2023-01-01</p></div>
+            </div>
+            <div id="invoice-content" class="mb-8"></div>
+            <div class="flex justify-end gap-4 no-print">
+                <button onclick="router.navigate('billing')" class="px-4 py-2 border rounded hover:bg-slate-50">Back</button>
+                <button id="whatsappShareBtn" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center"><i class="fab fa-whatsapp mr-2"></i> Share</button>
+                <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Print Invoice</button>
+            </div>
+        </section>
+
+        <section id="expenses" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Expense Manager</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+                    <h3 class="font-bold text-lg mb-4 text-slate-800">Add New Expense</h3>
+                    <form onsubmit="expenseManager.add(event)" class="space-y-4">
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Description / Details</label><input type="text" id="expTitle" placeholder="e.g., Diesel for Truck, Office Rent" class="w-full border-slate-300 rounded-lg p-2.5 border" required></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label><select id="expCategory" class="w-full border-slate-300 rounded-lg p-2.5 border"></select></div>
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Paid To (Employee?)</label><select id="expEmployee" class="w-full border-slate-300 rounded-lg p-2.5 border"><option value="">-- Other / Vendor --</option></select></div>
+                        </div>
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount (₹)</label><input type="number" id="expAmount" min="0" class="w-full border-slate-300 rounded-lg p-2.5 border" required></div>
+                        <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label><input type="date" id="expDate" class="w-full border-slate-300 rounded-lg p-2.5 border" required></div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">Add Expense</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 font-bold text-slate-700 flex justify-between items-center">
+                        <span>Expense Log</span>
+                        <select id="expLogFilter" class="text-xs border rounded p-1 font-normal text-slate-500" onchange="expenseManager.renderLog()">
+                            <option value="">All Staff/Vendors</option>
+                        </select>
+                    </div>
+                    <div class="overflow-y-auto flex-1 custom-scrollbar"><table class="w-full text-left"><thead class="bg-white text-slate-500 text-xs uppercase sticky top-0 shadow-sm z-10"><tr><th class="p-4 bg-slate-50">Date</th><th class="p-4 bg-slate-50">Description</th><th class="p-4 bg-slate-50 text-right">Amount</th></tr></thead><tbody id="expenseTableBody" class="divide-y divide-slate-50 text-sm"></tbody></table></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="reports" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Reports & Analytics</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1">Report Type</label><select id="reportType" class="border p-2 rounded-lg text-sm w-48" onchange="reportManager.toggleInputs()"><option value="financial">Financial Summary</option><option value="customer_monthly">Customer Statement</option><option value="day_book">Day Book (Orders)</option><option value="expense_report">Expenses Report</option></select></div>
+                    <div id="dateRangeInputs" class="flex gap-4">
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">Start Date</label><input type="date" id="repStartDate" class="border p-2 rounded-lg text-sm"></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">End Date</label><input type="date" id="repEndDate" class="border p-2 rounded-lg text-sm"></div>
+                    </div>
+                    <div id="repCustomerContainer" class="hidden"><label class="block text-xs font-bold text-slate-500 mb-1">Customer</label><select id="repCustomer" class="border p-2 rounded-lg text-sm w-48"></select></div>
+                    <div id="repEmployeeContainer" class="hidden"><label class="block text-xs font-bold text-slate-500 mb-1">Employee</label><select id="repEmployee" class="border p-2 rounded-lg text-sm w-48"></select></div>
+                    <button onclick="reportManager.generate()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 h-[38px]">Generate Report</button>
+                </div>
+            </div>
+            
+            <div id="reportOutput" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[300px]"><div class="text-center text-slate-400 mt-10">Select parameters above to generate report.</div></div>
+            
+            <div id="reportActions" class="hidden flex justify-end gap-3 mt-4 no-print">
+                <button onclick="reportManager.exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fas fa-file-excel mr-2"></i>Export CSV</button>
+                <button onclick="window.print()" class="bg-slate-700 text-white px-4 py-2 rounded shadow hover:bg-slate-800 text-sm"><i class="fas fa-print mr-2"></i>Print</button>
+            </div>
+        </section>
+
+        <section id="settings" class="view-section hidden fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">System Settings</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center"><span class="font-bold text-slate-700">Product Management</span><button onclick="settingsManager.addProduct()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add Product</button></div>
+                    <div class="p-6"><div class="grid grid-cols-1 gap-4" id="productSettingsList"></div></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center"><span class="font-bold text-slate-700">Staff Management</span><button onclick="settingsManager.openEmployeeModal()" class="text-sm text-blue-600 hover:underline"><i class="fas fa-plus"></i> Add Staff</button></div>
+                    <div class="p-6"><div class="space-y-2" id="employeeList"></div></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="customerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b bg-slate-50 flex-shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800" id="modalTitle">Add Customer</h3>
+                <button onclick="customerManager.closeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="custId">
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Customer Name</label><input type="text" id="custName" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Phone Number</label><input type="tel" id="custPhone" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" oninput="customerManager.checkDuplicate(this.value)"><p id="dupWarning" class="text-xs text-orange-600 mt-2 hidden font-medium flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i> Warning: Phone exists!</p></div>
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Opening Dues (Old Balance)</label><input type="number" id="custDues" placeholder="0" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Address</label><textarea id="custAddress" class="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" rows="3"></textarea></div>
+                <div class="flex justify-end gap-3 mt-6"><button onclick="customerManager.closeModal()" class="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancel</button><button onclick="customerManager.save()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Save</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b bg-slate-50 flex-shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Manage Customer Rates</h3>
+                <button onclick="document.getElementById('rateModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-center mb-4"><p class="text-sm text-slate-500">Rates for: <span id="rateCustName" class="font-bold text-slate-800"></span></p><button id="btnRestoreRates" onclick="customerManager.restoreStandardRates()" class="text-xs bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 px-2 py-1 rounded border border-slate-200 transition hidden"><i class="fas fa-undo mr-1"></i> Restore Standard</button></div>
+                <input type="hidden" id="rateCustId">
+                <div class="grid grid-cols-2 gap-4 mb-2 text-xs font-bold text-slate-500 uppercase"><div>Product</div><div class="text-right">Custom Rate</div></div>
+                <div id="rateInputs" class="space-y-3 mb-6"></div>
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+                    <p class="text-xs font-bold text-blue-800 mb-2 uppercase">Apply Changes To:</p>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rateScope" value="future" checked class="text-blue-600 focus:ring-blue-500"><span class="text-sm text-slate-700">Tomorrow / Future Orders</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="rateScope" value="today" class="text-blue-600 focus:ring-blue-500"><span class="text-sm text-slate-700">Update Today's Orders (Pending/Drafts)</span></label>
+                    </div>
+                </div>
+                <div class="flex justify-end"><button onclick="customerManager.saveRates()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium w-full">Save Rates</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="p-5 border-b bg-slate-50 flex-justify-between items-center"><h3 class="font-bold text-lg text-slate-800">Add Staff Member</h3><button onclick="settingsManager.closeEmployeeModal()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Name</label><input type="text" id="empName" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Mobile Number</label><input type="tel" id="empPhone" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Designation</label><input type="text" id="empRole" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g. Driver, Helper"></div>
+                <button onclick="settingsManager.saveEmployee()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Add Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use local IP for API in production, localhost for dev
+        const API_BASE = "http://127.0.0.1:5000";
+
+        const showToast = (msg, type='success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800';
+            const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+            toast.className = `${color} text-white px-6 py-4 rounded-lg shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[300px] pointer-events-auto`;
+            toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        const api = {
+            async get(endpoint) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`);
+                    return await res.json();
+                } catch (e) { showToast('Connection Error', 'error'); return null; }
+            },
+            async post(endpoint, body) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    return data;
+                } catch (e) { showToast(e.message, 'error'); return null; }
+            },
+            async put(endpoint, body) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, {
+                        method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    return data;
+                } catch (e) { showToast(e.message, 'error'); return null; }
+            },
+            async del(endpoint) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE' });
+                    return await res.json();
+                } catch (e) { showToast('Connection Error', 'error'); }
+            }
+        };
+
+        const store = {
+            data: { customers: [], products: [], expenseCategories: ['Operational', 'Purchase', 'Maintenance', 'Salary', 'Advance'], employees: [], orders: [], payments: [], expenses: [], orders: [] },
+            async sync() {
+                const data = await api.get('/api/sync');
+                if (data) {
+                    this.data.customers = data.customers || [];
+                    this.data.products = data.products || [];
+                    this.data.employees = data.employees || [];
+                    this.data.payments = data.payments || [];
+                    this.data.expenses = data.expenses || [];
+                    this.data.orders = data.orders || [];
+                }
+            }
+        };
+
+        const chartManager = {
+            mode: 'week', // week, month, year
+            chart: null,
+            setMode(mode) {
+                this.mode = mode;
+                document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('bg-slate-300', 'text-slate-800'));
+                document.getElementById(`btn-${mode}`).classList.add('bg-slate-300', 'text-slate-800');
+                this.render(document.getElementById('dashboardDate').value);
+            },
+            render(selectedDateStr) {
+                const ctx = document.getElementById('salesChart');
+                if(!ctx) return;
+                
+                const selectedDate = new Date(selectedDateStr);
+                const labels = [], dataPoints = [];
+                let daysToFetch = 7;
+                let dateFormat = {weekday:'short'};
+
+                if (this.mode === 'week') {
+                    daysToFetch = 7;
+                    dateFormat = {weekday:'short'};
+                } else if (this.mode === 'month') {
+                    daysToFetch = 30;
+                    dateFormat = {day:'numeric', month:'short'};
+                }
+
+                for(let i=daysToFetch-1; i>=0; i--) {
+                    const d = new Date(selectedDate); d.setDate(d.getDate() - i);
+                    const dateStr = d.toISOString().split('T')[0];
+                    labels.push(d.toLocaleDateString('en-IN', dateFormat));
+                    const dailyTotal = store.data.orders.filter(o => o.date === dateStr).reduce((sum, o) => sum + o.total, 0);
+                    dataPoints.push(dailyTotal);
+                }
+
+                if(this.chart) this.chart.destroy();
+                this.chart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Sales (₹)', data: dataPoints, backgroundColor: '#22c55e', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display:false } }, x: { grid: { display: false } } } } });
+            }
+        };
+
+        const auth = {
+            async login(e) {
+                e.preventDefault();
+                const u = document.getElementById('username').value;
+                const p = document.getElementById('password').value;
+                const res = await api.post('/api/login', {username: u, password: p});
+                if(res && res.token) {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    app.init();
+                }
+            },
+            logout() { location.reload(); }
+        };
+
+        const app = {
+            async init() {
+                await store.sync();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('dashboardDate').value = today;
+                document.getElementById('orderDate').value = today;
+                document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = today; });
+                await this.fetchOrdersForDate(today);
+                this.renderDashboard();
+                router.navigate('dashboard');
+            },
+            // FIX: Enhanced Sidebar Toggle logic for Desktop
+            toggleSidebarDesktop() {
+                const sidebar = document.getElementById('sidebar');
+                const textElements = sidebar.querySelectorAll('.sidebar-text');
+                const icon = document.getElementById('collapseIcon');
+
+                sidebar.classList.toggle('w-64');
+                sidebar.classList.toggle('w-20');
+                
+                textElements.forEach(el => el.classList.toggle('hidden'));
+                
+                // Rotate icon
+                if (sidebar.classList.contains('w-20')) {
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            },
+            toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); },
+            async changeDate(days) {
+                const input = document.getElementById('dashboardDate');
+                const current = new Date(input.value);
+                current.setDate(current.getDate() + days);
+                input.value = current.toISOString().split('T')[0];
+                await this.fetchOrdersForDate(input.value);
+                this.renderDashboard();
+            },
+            async setDateYesterday() {
+                const input = document.getElementById('dashboardDate');
+                const y = new Date(); y.setDate(y.getDate() - 1);
+                input.value = y.toISOString().split('T')[0];
+                await this.fetchOrdersForDate(input.value);
+                this.renderDashboard();
+            },
+            async fetchOrdersForDate(date) {
+                const orders = await api.get(`/api/orders?date=${date}`);
+                if (orders) {
+                    store.data.orders = store.data.orders.filter(o => o.date !== date);
+                    store.data.orders.push(...orders);
+                }
+            },
+            async fetchDashData() {
+                const date = document.getElementById('dashboardDate').value;
+                const res = await api.get(`/api/dashboard?date=${date}`);
+                return res;
+            },
+            async renderDashboard() {
+                const dateStr = document.getElementById('dashboardDate').value;
+                const todayStr = new Date().toISOString().split('T')[0];
+                const dObj = new Date(dateStr);
+                document.getElementById('dashDateLabel').innerText = dObj.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const isToday = dateStr === todayStr;
+                document.getElementById('todayBadge').classList.toggle('hidden', !isToday);
+                document.getElementById('btnBackToday').classList.toggle('hidden', isToday);
+
+                const stats = await this.fetchDashData();
+                if(!stats) return;
+
+                document.getElementById('dash-revenue-today').innerText = '₹' + stats.revenue_finalized.toLocaleString();
+                
+                const pctEl = document.getElementById('salesPct');
+                const pctVal = stats.revenue_pct_change || 0;
+                pctEl.innerText = (pctVal >= 0 ? '+' : '') + pctVal + '%';
+                pctEl.className = `text-[10px] font-bold px-1.5 py-0.5 rounded ${pctVal >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+
+                document.getElementById('dash-dues-prev').innerText = '₹' + stats.opening_balance.toLocaleString();
+                document.getElementById('dash-dues-total').innerText = '₹' + stats.total_dues.toLocaleString();
+                document.getElementById('dash-active-customers').innerText = stats.active_customers;
+
+                chartManager.render(dateStr);
+                
+                const highDuesList = document.getElementById('highDuesList');
+                highDuesList.innerHTML = '';
+                const defaulters = store.data.customers.filter(c => c.dues > 0).sort((a,b) => b.dues - a.dues).slice(0, 10);
+                if(defaulters.length === 0) highDuesList.innerHTML = '<div class="text-center text-green-600 p-4">No pending dues!</div>';
+                else {
+                    highDuesList.innerHTML = '<ul class="space-y-3">';
+                    defaulters.forEach(c => {
+                        highDuesList.innerHTML += `
+                            <li class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100 hover:shadow-sm transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-8 w-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">${c.name.charAt(0)}</div>
+                                    <span class="font-medium text-slate-700 text-sm">${c.name}</span>
+                                </div>
+                                <span class="font-bold text-red-600 text-sm">₹${c.dues.toLocaleString()}</span>
+                            </li>`;
+                    });
+                    highDuesList.innerHTML += '</ul>';
+                }
+            },
+            goToToday() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('dashboardDate').value = today;
+                this.renderDashboard();
+            }
+        };
+
+        const router = {
+            navigate(viewId) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                const target = document.getElementById(viewId);
+                if(target) {
+                    target.classList.remove('hidden');
+                    document.querySelectorAll('.nav-item').forEach(el => {
+                        el.classList.toggle('bg-slate-800', el.dataset.target === viewId);
+                        el.classList.toggle('text-white', el.dataset.target === viewId);
+                    });
+                    if(viewId === 'dashboard') {
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('dashboardDate').value = today;
+                        app.renderDashboard();
+                    }
+                    if(viewId === 'customers') customerManager.renderList();
+                    if(viewId === 'orders') orderManager.render();
+                    if(viewId === 'billing') billingManager.init();
+                    if(viewId === 'settings') settingsManager.render();
+                    if(viewId === 'expenses') expenseManager.render();
+                    if(viewId === 'reports') reportManager.init();
+                    if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); }
+                }
+            }
+        };
+
+        const customerManager = {
+            renderList() {
+                const term = document.getElementById('customerSearch').value.toLowerCase();
+                const sort = document.getElementById('customerSort').value;
+                const tbody = document.getElementById('customerTableBody');
+                tbody.innerHTML = '';
+                let list = store.data.customers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+                if(sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
+                else list.sort((a,b) => b.dues - a.dues);
+
+                // Get today's date for order calculation
+                const today = new Date().toISOString().split('T')[0];
+
+                list.forEach(c => {
+                    const rateStatus = (c.customRates && Object.keys(c.customRates).length > 0) ? `<span class="text-purple-600 font-bold text-xs bg-purple-50 px-2 py-1 rounded">Custom</span>` : `<span class="text-slate-500 font-medium text-xs bg-slate-100 px-2 py-1 rounded">Standard</span>`;
+                    const duesColor = c.dues > 1000 ? 'text-red-600 bg-red-50' : (c.dues > 0 ? 'text-orange-600' : 'text-green-600');
+                    
+                    // --- CHANGED: Calculate Today's Order, Previous Dues, Total Dues ---
+                    const todayOrder = store.data.orders.find(o => o.customerId === c.id && o.date === today);
+                    let todayAmt = 0;
+                    let totalDue = c.dues; // Assume backend c.dues is the master record of Total Due
+                    let prevBalance = c.dues;
+
+                    if (todayOrder && todayOrder.status === 'finalized') {
+                        todayAmt = todayOrder.total;
+                        // If finalized, it's already in c.dues, so subtract to find previous
+                        prevBalance = totalDue - todayAmt; 
+                    } else if (todayOrder && todayOrder.status === 'draft') {
+                         // If draft, usually not in c.dues yet. 
+                         // To show "Total Due" including today's order, add it.
+                         // Or stick to ledger. Let's assume the user wants to inform about the NEW Total.
+                         todayAmt = todayOrder.total;
+                         // c.dues is previous balance
+                         prevBalance = c.dues;
+                         totalDue = prevBalance + todayAmt;
+                    }
+                    
+                    // Format numbers to 2 decimal places if needed, or integers
+                    const waMsg = `Dear ${c.name},\n\nThank you for your order today worth ₹${todayAmt}.\nYour previous outstanding balance was ₹${prevBalance}.\nThis brings your total due to *₹${totalDue}*.\n\nPlease clear the payment at your earliest convenience.\n\nBest regards,\nDurga Dairy Warangal`;
+                    const waLink = `https://wa.me/91${c.phone}?text=${encodeURIComponent(waMsg)}`;
+                    // -------------------------------------------------------------------
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-50">
+                            <td class="p-4"><div class="font-bold text-slate-800">${c.name}</div><div class="text-xs text-slate-400 font-mono">${c.id}</div></td>
+                            <td class="p-4 text-slate-600"><div>${c.phone}</div><div class="text-xs text-slate-400 truncate w-32">${c.address || '-'}</div></td>
+                            <td class="p-4 text-right"><span class="font-bold px-2 py-1 rounded ${duesColor}">₹${c.dues}</span></td>
+                            <td class="p-4 text-center">${rateStatus}</td>
+                            <td class="p-4 text-right flex justify-end gap-2">
+                                <a href="${waLink}" target="_blank" class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg" title="Share Update"><i class="fab fa-whatsapp"></i></a>
+                                <button onclick="customerManager.openRates('${c.id}')" class="text-purple-600 bg-purple-50 hover:bg-purple-100 p-2 rounded-lg text-xs font-bold">Rates</button>
+                                <button onclick="customerManager.edit('${c.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg"><i class="fas fa-edit"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            },
+            openModal() {
+                document.getElementById('customerModal').classList.remove('hidden');
+                document.getElementById('modalTitle').innerText = 'Add New Customer';
+                document.getElementById('custId').value = '';
+                document.getElementById('custName').value = '';
+                document.getElementById('custPhone').value = '';
+                document.getElementById('custDues').value = ''; 
+                document.getElementById('custAddress').value = '';
+                document.getElementById('dupWarning').classList.add('hidden');
+            },
+            closeModal() { document.getElementById('customerModal').classList.add('hidden'); },
+            checkDuplicate(phone) {
+                const match = store.data.customers.find(c => c.phone === phone && c.id !== document.getElementById('custId').value);
+                document.getElementById('dupWarning').classList.toggle('hidden', !match);
+            },
+            async save() {
+                const id = document.getElementById('custId').value;
+                const body = {
+                    name: document.getElementById('custName').value,
+                    phone: document.getElementById('custPhone').value,
+                    address: document.getElementById('custAddress').value,
+                    dues: parseFloat(document.getElementById('custDues').value || 0) 
+                };
+                if(!body.name || !body.phone) return showToast("Name and Phone required", 'error');
+
+                let res;
+                if (id) res = await api.put(`/api/customers/${id}`, body);
+                else res = await api.post('/api/customers', body);
+
+                if(res) {
+                    await store.sync();
+                    this.closeModal();
+                    this.renderList();
+                    showToast('Customer Saved Successfully');
+                }
+            },
+            edit(id) {
+                const c = store.data.customers.find(c => c.id === id);
+                if(!c) return;
+                this.openModal();
+                document.getElementById('modalTitle').innerText = 'Edit Customer';
+                document.getElementById('custId').value = c.id;
+                document.getElementById('custName').value = c.name;
+                document.getElementById('custPhone').value = c.phone;
+                document.getElementById('custAddress').value = c.address;
+                document.getElementById('custDues').value = c.dues;
+            },
+            openRates(id) {
+                const c = store.data.customers.find(c => c.id === id);
+                document.getElementById('rateModal').classList.remove('hidden');
+                document.getElementById('rateCustName').innerText = c.name;
+                document.getElementById('rateCustId').value = c.id;
+                const container = document.getElementById('rateInputs');
+                container.innerHTML = '';
+                store.data.products.forEach(p => {
+                    const currentRate = (c.customRates && c.customRates[p.id]) ? c.customRates[p.id] : '';
+                    const isCustom = currentRate !== '' && currentRate != p.price;
+                    container.innerHTML += `
+                        <div class="flex justify-between items-center bg-white p-3 rounded border ${isCustom ? "border-blue-500 bg-blue-50" : "border-slate-200"}">
+                            <div><div class="font-bold text-sm text-slate-700">${p.name}</div><div class="text-xs font-semibold text-slate-400">Standard Rate: ₹${p.price}</div></div>
+                            <div class="flex flex-col items-end"><span class="text-[10px] text-slate-500 uppercase font-extrabold mb-1">${isCustom ? 'Custom Rate' : 'Standard'}</span><div class="flex items-center gap-1"><span class="text-sm font-bold text-slate-600">₹</span><input id="rate_${p.id}" type="number" value="${currentRate}" placeholder="${p.price}" class="w-20 border rounded p-1 text-center text-sm font-bold text-slate-800"></div></div>
+                        </div>`;
+                });
+            },
+            async saveRates() {
+                const cid = document.getElementById('rateCustId').value;
+                const scope = document.querySelector('input[name="rateScope"]:checked').value;
+                const rates = {};
+                store.data.products.forEach(p => {
+                    const val = document.getElementById(`rate_${p.id}`).value;
+                    if(val && val !== '') rates[p.id] = parseFloat(val);
+                });
+                
+                const res = await api.post(`/api/customers/${cid}/rates`, { rates, scope });
+                if(res) {
+                    showToast(res.message);
+                    await store.sync();
+                    await app.fetchOrdersForDate(document.getElementById('orderDate').value); 
+                    document.getElementById('rateModal').classList.add('hidden');
+                    this.renderList();
+                }
+            }
+        };
+
+        const orderManager = {
+            async render() {
+                const dateInput = document.getElementById('orderDate').value;
+                document.getElementById('printDate').innerText = new Date(dateInput).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                document.getElementById('orderListDate').innerText = `For: ${new Date(dateInput).toLocaleDateString()}`;
+                await app.fetchOrdersForDate(dateInput); 
+                
+                const h = document.getElementById('routeHeaderRow');
+                h.innerHTML = '<th class="p-2 w-32 sticky left-0 bg-slate-50 z-10 text-left border-r border-slate-300">Customer</th>' + 
+                              store.data.products.map(p => `<th class="p-2 w-16 text-center text-xs font-bold break-words leading-tight border-r border-slate-200">${p.name}</th>`).join('') + 
+                              '<th class="p-4 text-center no-print">Status</th>';
+                
+                const tbody = document.getElementById('orderTableBody');
+                tbody.innerHTML = '';
+                
+                store.data.customers.forEach(c => {
+                    const order = store.data.orders.find(o => o.customerId === c.id && o.date === dateInput);
+                    const inputs = store.data.products.map(p => {
+                         let qty = (order && order.items.find(i => i.name === p.name)) ? order.items.find(i => i.name === p.name).quantity : '';
+                         return `<td class="p-0 border-r border-slate-100">
+                                    <input type="number" id="ord_${c.id}_${p.id}" min="0" value="${qty}" 
+                                    class="w-full border-0 border-b border-transparent hover:border-slate-300 focus:border-blue-500 rounded-none text-center py-1 bg-transparent focus:bg-blue-50 quantity-input text-sm font-bold h-8 transition-colors" 
+                                    data-pid="${p.id}" oninput="orderManager.updateTotals()">
+                                 </td>`
+                    }).join('');
+                    const status = order ? (order.status === 'finalized' ? `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Finalized</span>` : `<span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Draft</span>`) : `<span class="text-xs text-slate-400">Pending</span>`;
+                    tbody.innerHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                                            <td class="p-2 sticky left-0 bg-white z-10 border-r border-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                                <div class="font-bold text-slate-700 text-sm whitespace-nowrap">${c.name}</div>
+                                            </td>
+                                            ${inputs}
+                                            <td class="p-4 text-center w-24 no-print" id="status_${c.id}">${status}</td>
+                                        </tr>`;
+                });
+                this.updateTotals();
+            },
+            async changeDate(days) { 
+                const input = document.getElementById('orderDate');
+                const current = new Date(input.value);
+                current.setDate(current.getDate() + days);
+                input.value = current.toISOString().split('T')[0];
+                this.render(); 
+            },
+            updateTotals() {
+                const totals = {}; store.data.products.forEach(p => totals[p.id] = 0);
+                document.querySelectorAll('.quantity-input').forEach(input => {
+                    const pid = input.dataset.pid;
+                    if(totals[pid] !== undefined) totals[pid] += (parseInt(input.value) || 0);
+                });
+                let footerHtml = '<tr class="bg-slate-100 font-bold sticky bottom-0 z-20"><td class="p-2 text-right sticky left-0 bg-slate-100 border-r border-slate-300">Total:</td>';
+                store.data.products.forEach(p => footerHtml += `<td class="p-1 text-center text-blue-600 text-sm border-r border-slate-200">${totals[p.id]}</td>`);
+                document.getElementById('orderTableFooter').innerHTML = footerHtml + '<td class="no-print"></td></tr>';
+            },
+            async fillYesterday() {
+                const date = document.getElementById('orderDate').value;
+                const d = new Date(date); d.setDate(d.getDate() - 1);
+                const prevDate = d.toISOString().split('T')[0];
+                const prevOrders = await api.get(`/api/orders?date=${prevDate}`);
+                if (!prevOrders || prevOrders.length === 0) return showToast("No orders found for previous day", "error");
+                
+                prevOrders.forEach(order => {
+                    order.items.forEach(item => {
+                        const prod = store.data.products.find(p => p.name === item.name);
+                        if(prod) { const input = document.getElementById(`ord_${order.customerId}_${prod.id}`); if(input) input.value = item.quantity; }
+                    });
+                });
+                this.updateTotals();
+                showToast("Filled from history");
+            },
+            async saveDraft() { await this.submitOrders('draft'); },
+            async finalizeDay() { if(confirm('Finalize orders?')) await this.submitOrders('finalized'); },
+            async submitOrders(status) {
+                const date = document.getElementById('orderDate').value;
+                const ordersToSave = [];
+                store.data.customers.forEach(c => {
+                    const items = []; let total = 0;
+                    store.data.products.forEach(p => {
+                        const q = parseInt(document.getElementById(`ord_${c.id}_${p.id}`)?.value || 0);
+                        if(q > 0) {
+                            const price = (c.customRates && c.customRates[p.id]) ? c.customRates[p.id] : p.price;
+                            items.push({ name: p.name, quantity: q, price });
+                            total += q * price;
+                        }
+                    });
+                    if(items.length > 0) ordersToSave.push({ id: `ORD-${Date.now()}-${c.id}`, customerId: c.id, customerName: c.name, items, total, status });
+                });
+                
+                if(ordersToSave.length === 0) return showToast("No orders to save", "error");
+                const res = await api.post('/api/orders/save', { date, orders: ordersToSave });
+                if(res) {
+                    showToast(`${status === 'draft' ? 'Draft Saved' : 'Finalized'}: ${res.message}`);
+                    await store.sync();
+                    await this.render();
+                }
+            }
+        };
+
+        const billingManager = {
+            init() {
+                const paySel = document.getElementById('payCustomer'), invSel = document.getElementById('invoiceCustomer'), repSel = document.getElementById('repCustomer');
+                let opts = '<option value="">Select Customer</option>'; store.data.customers.forEach(c => opts += `<option value="${c.id}">${c.name} (Due: ₹${c.dues})</option>`);
+                paySel.innerHTML = invSel.innerHTML = repSel.innerHTML = opts;
+                const colSel = document.getElementById('payCollector'); colSel.innerHTML = '<option value="">-- Self / Owner --</option>'; store.data.employees.forEach(e => colSel.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`);
+                this.renderHistory();
+            },
+            showDue(cid) { const c = store.data.customers.find(x => x.id === cid); document.getElementById('payCustomerDue').innerText = (c && c.dues > 0) ? `Current Pending: ₹${c.dues}` : ''; },
+            renderHistory() {
+                const tbody = document.getElementById('paymentHistoryBody'); tbody.innerHTML = '';
+                const sortedPayments = [...store.data.payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const grouped = {};
+                sortedPayments.forEach(p => { const d = new Date(p.date); const key = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); if(!grouped[key]) grouped[key] = { total: 0, items: [] }; grouped[key].items.push(p); grouped[key].total += p.amount; });
+                Object.keys(grouped).forEach(month => {
+                    tbody.innerHTML += `<tr class="bg-indigo-50 border-b border-indigo-100"><td colspan="3" class="p-3 text-xs font-bold text-indigo-800 uppercase tracking-wider">${month}</td><td class="p-3 text-right text-xs font-bold text-indigo-800">Total: ₹${grouped[month].total.toLocaleString()}</td></tr>`;
+                    grouped[month].items.forEach(p => { const c = store.data.customers.find(x => x.id === p.customerId); tbody.innerHTML += `<tr class="hover:bg-slate-50 border-b"><td class="p-4 text-slate-500 text-xs pl-8">${p.date}</td><td class="p-4 font-medium">${c?c.name:'Unknown'}</td><td class="p-4"><div class="text-sm">${p.note || ''}</div>${p.collectedBy ? `<div class="text-xs text-blue-600"><i class="fas fa-user-tag mr-1"></i>${p.collectedBy}</div>` : ''}</td><td class="p-4 text-right font-bold text-green-600">₹${p.amount}</td></tr>`; });
+                });
+                const now = new Date(); const currentMonthKey = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                document.getElementById('billingMonthTotal').innerText = '₹' + (grouped[currentMonthKey] ? grouped[currentMonthKey].total.toLocaleString() : 0);
+                document.getElementById('billingMonthName').innerText = currentMonthKey;
+            },
+            async recordPayment(e) { e.preventDefault(); const body = { customerId: document.getElementById('payCustomer').value, amount: parseFloat(document.getElementById('payAmount').value), date: document.getElementById('payDate').value, collectedBy: document.getElementById('payCollector').value, note: document.getElementById('payNote').value }; if(await api.post('/api/payments', body)) { showToast('Payment Recorded'); document.getElementById('payAmount').value = ''; document.getElementById('payNote').value = ''; await store.sync(); this.init(); app.renderDashboard(); } },
+            generateInvoice() { const cid = document.getElementById('invoiceCustomer').value; if(!cid) return showToast('Select a customer', 'error'); const c = store.data.customers.find(x => x.id === cid); const orders = store.data.orders.filter(o => o.customerId === cid).sort((a,b) => new Date(b.date) - new Date(a.date)); const payments = store.data.payments.filter(p => p.customerId === cid).sort((a,b) => new Date(b.date) - new Date(a.date)); document.getElementById('billing').classList.add('hidden'); document.getElementById('invoice-view').classList.remove('hidden'); document.getElementById('inv-cust-name').innerText = c.name; document.getElementById('inv-date').innerText = `Date: ${new Date().toLocaleDateString()}`; let html = `<div class="mb-4 text-right font-bold text-xl ${c.dues>0?'text-red-600':'text-green-600'} border p-4 inline-block float-right rounded">Current Dues: ₹${c.dues}</div><h3 class="font-bold border-b mb-2">Recent Transactions</h3><table class="w-full text-sm text-left mb-8"><thead class="bg-slate-100"><tr><th class="p-2">Date</th><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2 text-right">Amount</th></tr></thead><tbody>`; const allTx = [...orders.map(o => ({ date: o.date, type: 'Order', desc: o.items.map(i=>`${i.quantity} ${i.name}`).join(', '), amt: o.total })), ...payments.map(p => ({ date: p.date, type: 'Payment', desc: 'Cash/Online', amt: -p.amount }))].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 15); allTx.forEach(t => html += `<tr><td class="p-2 border-b">${t.date}</td><td class="p-2 border-b font-bold ${t.type==='Payment'?'text-green-600':'text-slate-600'}">${t.type}</td><td class="p-2 border-b">${t.desc}</td><td class="p-2 border-b text-right">${t.amt > 0 ? '₹'+t.amt : '-₹'+Math.abs(t.amt)}</td></tr>`); document.getElementById('invoice-content').innerHTML = html + `</tbody></table>`; document.getElementById('whatsappShareBtn').onclick = () => window.open(`https://wa.me/91${c.phone}?text=${encodeURIComponent(`Hello ${c.name}, your current outstanding balance is ₹${c.dues}.`)}`, '_blank'); }
+        };
+
+        const expenseManager = {
+            render() { const s = document.getElementById('expCategory'); s.innerHTML = ''; store.data.expenseCategories.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`); const emp = document.getElementById('expEmployee'); emp.innerHTML = '<option value="">-- Other / Vendor --</option>'; const filter = document.getElementById('expLogFilter'); if(filter) { const currentVal = filter.value; filter.innerHTML = '<option value="">All Staff/Vendors</option>'; store.data.employees.forEach(e => { const opt = `<option value="${e.name}">${e.name} (${e.role})</option>`; emp.innerHTML += opt; filter.innerHTML += `<option value="${e.name}">${e.name}</option>`; }); filter.value = currentVal; } else { store.data.employees.forEach(e => emp.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`); } this.renderLog(); },
+            async renderLog() { const tbody = document.getElementById('expenseTableBody'); tbody.innerHTML = ''; const empFilter = document.getElementById('expLogFilter')?.value || ''; let exps = store.data.expenses; if(empFilter) exps = exps.filter(e => e.employeeId === empFilter); exps.sort((a,b) => new Date(b.date) - new Date(a.date)); const grouped = {}; exps.forEach(e => { const d = new Date(e.date); const key = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); if(!grouped[key]) grouped[key] = { total: 0, items: [] }; grouped[key].items.push(e); grouped[key].total += e.amount; }); Object.keys(grouped).forEach(month => { tbody.innerHTML += `<tr class="bg-gray-100 border-b border-gray-200"><td colspan="2" class="p-3 text-xs font-bold text-gray-600 uppercase tracking-wider">${month}</td><td class="p-3 text-right text-xs font-bold text-gray-700">Total: ₹${grouped[month].total.toLocaleString()}</td></tr>`; grouped[month].items.forEach(e => { tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-4 text-slate-500 pl-8">${e.date}</td><td class="p-4 font-medium"><div class="text-slate-800">${e.title}</div><div class="mt-1"><span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 border">${e.category}</span> ${e.employeeId ? `<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"><i class="fas fa-user mr-1"></i>${e.employeeId}</span>` : ''}</div></td><td class="p-4 text-right font-bold text-red-500">₹${e.amount}</td></tr>`; }); }); },
+            async add(e) { e.preventDefault(); const body = { title: document.getElementById('expTitle').value, amount: parseFloat(document.getElementById('expAmount').value), category: document.getElementById('expCategory').value, date: document.getElementById('expDate').value, employeeId: document.getElementById('expEmployee').value }; if(await api.post('/api/expenses', body)) { showToast('Expense Added'); await store.sync(); this.render(); } }
+        };
+
+        const reportManager = {
+            currentData: null,
+            init() { 
+                billingManager.init(); 
+                const rEmp = document.getElementById('repEmployee'); 
+                rEmp.innerHTML = '<option value="">All Employees</option>'; 
+                store.data.employees.forEach(e => rEmp.innerHTML += `<option value="${e.name}">${e.name}</option>`); 
+            },
+            toggleInputs() { 
+                const t = document.getElementById('reportType').value; 
+                document.getElementById('repCustomerContainer').classList.toggle('hidden', t !== 'customer_monthly'); 
+                document.getElementById('repEmployeeContainer').classList.toggle('hidden', t !== 'expense_report'); 
+            },
+            async generate() {
+                const type = document.getElementById('reportType').value;
+                const start = document.getElementById('repStartDate').value;
+                const end = document.getElementById('repEndDate').value;
+                const out = document.getElementById('reportOutput');
+                
+                if(!start || !end) return showToast("Select dates", "error");
+                
+                // Fetch data for the range
+                const data = await api.get(`/api/reports/data?start=${start}&end=${end}`);
+                if(!data) return;
+                this.currentData = data;
+                
+                document.getElementById('reportActions').classList.remove('hidden');
+                let html = "";
+
+                if(type === 'financial') { 
+                    const rev = data.orders.reduce((sum, o) => sum + o.total, 0); 
+                    const exp = data.expenses.reduce((sum, e) => sum + e.amount, 0); 
+                    const profit = rev - exp; 
+                    html = `<h3 class="font-bold text-center text-lg mb-4">Financial Summary (${new Date(start).toLocaleDateString()} - ${new Date(end).toLocaleDateString()})</h3><div class="grid grid-cols-3 gap-4 text-center"><div class="bg-green-50 p-4 rounded"><div class="text-xs text-green-800">Total Sales</div><div class="text-xl font-bold text-green-600">₹${rev.toLocaleString()}</div></div><div class="bg-red-50 p-4 rounded"><div class="text-xs text-red-800">Total Expenses</div><div class="text-xl font-bold text-red-600">₹${exp.toLocaleString()}</div></div><div class="bg-blue-50 p-4 rounded"><div class="text-xs text-blue-800">Net Profit</div><div class="text-xl font-bold ${profit>=0?'text-green-600':'text-red-600'}">₹${profit.toLocaleString()}</div></div></div>`; 
+                }
+                else if(type === 'day_book') { 
+                    html = `<h3 class="font-bold mb-4">Day Book (Orders)</h3><table class="w-full text-sm text-left border"><thead class="bg-slate-100"><tr><th class="p-2 border">Date</th><th class="p-2 border">Customer</th><th class="p-2 text-right border">Amount</th></tr></thead><tbody>`; 
+                    data.orders.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(o => html += `<tr><td class="p-2 border">${o.date}</td><td class="p-2 border">${o.customerName}</td><td class="p-2 border text-right">₹${o.total}</td></tr>`); 
+                    html += "</tbody></table>"; 
+                }
+                else if(type === 'expense_report') { 
+                    const empId = document.getElementById('repEmployee').value; 
+                    let filteredExp = data.expenses; 
+                    if(empId) filteredExp = filteredExp.filter(e => e.employeeId === empId); 
+                    html = `<h3 class="font-bold mb-4">Expense Report ${empId ? '- ' + empId : ''}</h3><table class="w-full text-sm text-left border"><thead class="bg-slate-100"><tr><th class="p-2 border">Date</th><th class="p-2 border">Cat</th><th class="p-2 border">Desc</th><th class="p-2 text-right border">Amount</th></tr></thead><tbody>`; 
+                    filteredExp.forEach(e => html += `<tr><td class="p-2 border">${e.date}</td><td class="p-2 border">${e.category}</td><td class="p-2 border">${e.title}</td><td class="p-2 border text-right">₹${e.amount}</td></tr>`); 
+                    html += "</tbody></table>"; 
+                }
+                else if(type === 'customer_monthly') { 
+                    const cid = document.getElementById('repCustomer').value;
+                    if(!cid) {
+                        showToast("Please select a customer", "error");
+                        return;
+                    }
+                    const cust = store.data.customers.find(c => c.id === cid);
+                    const custOrders = data.orders.filter(o => o.customerId === cid).sort((a,b) => new Date(a.date) - new Date(b.date));
+                    const products = store.data.products;
+                    
+                    // Header
+                    html = `
+                    <div class="mb-6 border-b pb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800">Customer Statement</h1>
+                                <div class="text-slate-600 mt-1 font-medium">${cust ? cust.name : 'Unknown Customer'}</div>
+                                <div class="text-xs text-slate-500">${cust ? cust.phone : ''}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-slate-500">Period</div>
+                                <div class="font-bold text-slate-700">${new Date(start).toLocaleDateString('en-IN')} - ${new Date(end).toLocaleDateString('en-IN')}</div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                    // Table
+                    html += `<div class="overflow-x-auto"><table class="w-full text-sm text-left border-collapse border border-slate-300">
+                        <thead class="bg-slate-100 text-slate-700 font-bold text-xs uppercase">
+                            <tr>
+                                <th class="p-2 border border-slate-300 w-24">Date</th>`;
+                    
+                    // Dynamic Product Columns
+                    products.forEach(p => {
+                        html += `<th class="p-2 border border-slate-300 text-center">${p.name}</th>`;
+                    });
+
+                    html += `<th class="p-2 border border-slate-300 text-right w-24">Cost (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">`;
+
+                    let grandTotal = 0;
+                    const prodTotals = {};
+                    products.forEach(p => prodTotals[p.id] = 0);
+
+                    if (custOrders.length === 0) {
+                        html += `<tr><td colspan="${products.length + 2}" class="p-4 text-center text-slate-500">No orders found for this period.</td></tr>`;
+                    } else {
+                        custOrders.forEach(order => {
+                            const d = new Date(order.date);
+                            const displayDate = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                            
+                            html += `<tr>
+                                <td class="p-2 border border-slate-200 font-medium bg-slate-50">${displayDate}</td>`;
+                            
+                            products.forEach(p => {
+                                const item = order.items.find(i => i.name === p.name);
+                                const qty = item ? item.quantity : '-';
+                                if(item) prodTotals[p.id] += (item.quantity || 0);
+                                html += `<td class="p-2 border border-slate-200 text-center ${qty === '-' ? 'text-slate-300' : 'text-slate-800 font-bold'}">${qty}</td>`;
+                            });
+
+                            html += `<td class="p-2 border border-slate-200 text-right font-bold text-slate-800">₹${order.total}</td>
+                            </tr>`;
+                            grandTotal += order.total;
+                        });
+                    }
+
+                    // Footer
+                    html += `<tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-300">
+                        <td class="p-2 border border-slate-300 text-right">TOTAL</td>`;
+                    
+                    products.forEach(p => {
+                        html += `<td class="p-2 border border-slate-300 text-center">${prodTotals[p.id]}</td>`;
+                    });
+
+                    html += `<td class="p-2 border border-slate-300 text-right text-blue-700 text-base">₹${grandTotal.toLocaleString()}</td>
+                    </tr></tbody></table></div>`;
+                    
+                    // Current Dues Info
+                    if(cust) {
+                        html += `<div class="mt-4 flex justify-end">
+                            <div class="bg-red-50 text-red-700 px-4 py-2 rounded border border-red-200 font-bold text-sm">
+                                Current Ledger Balance (Total Dues): ₹${cust.dues.toLocaleString()}
+                            </div>
+                        </div>`;
+                    }
+                }
+                
+                out.innerHTML = html;
+            },
+            exportCSV() {
+                if(!this.currentData) return;
+                const type = document.getElementById('reportType').value;
+                let csvContent = "data:text/csv;charset=utf-8,";
+                let rows = [];
+                
+                if (type === 'customer_monthly') {
+                    const cid = document.getElementById('repCustomer').value;
+                    const cust = store.data.customers.find(c => c.id === cid);
+                    const products = store.data.products;
+                    const custOrders = this.currentData.orders.filter(o => o.customerId === cid).sort((a,b) => new Date(a.date) - new Date(b.date));
+                    
+                    // Headers: Date, Product1, Product2..., Total Cost
+                    let header = ["Date"];
+                    products.forEach(p => header.push(p.name));
+                    header.push("Total Cost");
+                    rows.push(header);
+
+                    custOrders.forEach(o => {
+                        let row = [o.date];
+                        products.forEach(p => {
+                            const item = o.items.find(i => i.name === p.name);
+                            row.push(item ? item.quantity : 0);
+                        });
+                        row.push(o.total);
+                        rows.push(row);
+                    });
+                }
+                else if(type === 'day_book') { 
+                    rows.push(["Date", "Customer", "Amount"]); 
+                    this.currentData.orders.forEach(o => rows.push([o.date, o.customerName, o.total])); 
+                }
+                else if (type === 'expense_report') { 
+                    rows.push(["Date", "Category", "Description", "Amount"]); 
+                    const empId = document.getElementById('repEmployee').value; 
+                    let exps = this.currentData.expenses; 
+                    if(empId) exps = exps.filter(e => e.employeeId === empId); 
+                    exps.forEach(e => rows.push([e.date, e.category, e.title, e.amount])); 
+                }
+                else { return showToast("Export available for detailed lists only"); }
+                
+                rows.forEach(r => csvContent += r.join(",") + "\r\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a"); 
+                link.setAttribute("href", encodedUri); 
+                link.setAttribute("download", `report_${type}.csv`); 
+                document.body.appendChild(link); 
+                link.click();
+            }
+        };
+
+        const settingsManager = {
+            render() {
+                const c = document.getElementById('productSettingsList'); c.innerHTML = ''; store.data.products.forEach(p => c.innerHTML += `<div class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative"><button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button><div class="font-bold text-slate-700 mb-2">${p.name}</div><div class="flex items-center gap-2"><span class=\"text-sm\">₹</span><input type=\"number\" class=\"w-full border rounded p-1 text-sm\" value=\"${p.price}\" onchange=\"settingsManager.updatePrice('${p.id}', this.value)\"></div></div>`);
+                const e = document.getElementById('employeeList'); e.innerHTML = ''; store.data.employees.forEach(emp => e.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-3 rounded border"><div><div class="font-bold text-sm text-slate-800">${emp.name}</div><div class="text-xs text-slate-500">${emp.role} • ${emp.phone || 'No Phone'}</div></div><button onclick="settingsManager.delEmployee('${emp.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button></div>`);
+            },
+            async addProduct() { const name = prompt("Name:"); const price = prompt("Price:"); if(name && price) { await api.post('/api/products', {name, price: parseFloat(price)}); await store.sync(); this.render(); } },
+            async delProduct(id) { if(confirm('Delete?')) { await api.del(`/api/products/${id}`); await store.sync(); this.render(); } },
+            async updatePrice(id, val) { await api.put(`/api/products/${id}`, {price: parseFloat(val)}); await store.sync(); },
+            openEmployeeModal() { document.getElementById('employeeModal').classList.remove('hidden'); document.getElementById('empName').value = ''; document.getElementById('empPhone').value = ''; document.getElementById('empRole').value = ''; },
+            closeEmployeeModal() { document.getElementById('employeeModal').classList.add('hidden'); },
+            async saveEmployee() { const body = { name: document.getElementById('empName').value, phone: document.getElementById('empPhone').value, role: document.getElementById('empRole').value }; if(await api.post('/api/employees', body)) { this.closeEmployeeModal(); await store.sync(); this.render(); } },
+            async delEmployee(id) { if(confirm('Remove?')) { await api.del(`/api/employees/${id}`); await store.sync(); this.render(); } }
+        };
+
+        window.onload = () => document.getElementById('username').focus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+main problems
+1.printing type and detils
+2.reports page
+3.messagze type
+
+
+
+1.while changing rates for a specific customer ask admin to reflect rates from today orders also or from tomorrow on wards {or for only one day optional)
+2.add mobile number of employee and designation for idea purpose
+3.remove yesterday collection catrd from top of dash board and y opening balance is going into to negative.
+4.dont reflect any balance in opening balance of draft items its getting negative.
+5.in reports page i need whole functioning all features like if expensences by customer allow to select custome name if employee allow to select employee name allo full custimazition of filetrs to get detailed reports.
+
+
+1.in reports of expenses add category also.
+2.
+3.
+
+1.while adding a customer need a coloum of existing dues and need daily due updates of messeges
+2.in dash board in customer dues breakdown name and amount alignment not good and add red colour to amount make dash board look attractive.
+3.while adding new staff name in web it showing the detail os recent staff need form don't show any details in it
+4.in dashboard of today sale dont show draft sales only show after finalize sale.
+5.in billing and payments while selecting customer show ther due in small red colour '
+6.
+
+1.there was a major issue with reports page no function is working and not showing any data or report and add button to export data to excel or print it.
+2.today sale is different from opening balance today sale is the product seling fainalized on today and total sales happen opening balance is total dues till yesterday other than today sales ,total dued is dues inc today sales
+3.mAKE tp defaulter look good the dash board ui is not good make it look attractive.
+4. in orders and route the date change arrows are not working.
+5.in payment history not showing description .
+6.in dash board page highlight today date to know admin this is the day and if user clicks on dash board it auto shows today dash board.
+
+
+1.neeed preview for reports so they can see later if needed we can print.
+2.need month wise total expenses like google pay has new feature like all transaction in a month calculate and placed on top of payments same like that.
+3.in expensenses while selected employee maintanances show only expenxes  related to that employee name.
+
+
+1.need percentage indicator on top of today sales card comparing to yesterday.
+2.unable to preview of reports when I hit generate report it should show the details instantly below the filter late on the need we choose to print just show details on down of generate report modal.
+3.in dashboard when we are on not today date show a toggle to go to today date inzstantly by clicking on it.
+4.in billing and payments no need of total monthly collections separate in payment history add a month name transactions are separated  by month in that add a heading as December or that month name dynamic add total payements done on that month and show.
+5.same like above add month and totala expensens on the month 
+6.
+
+
+1.sales trends are showing of only one day in week not showing whole week and need monthly and yearly buttons 
+2.in reports it not showing filtered data I need data to see later if user really need he prints all instant view of data.
+
+
+
+1. in customer specific rates page unable to scroll or exit .
+
+
+1.reports page 
+2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**in feature we give app or web crediantals based on the work of employee and give acces to the person releated to that work like 
+distrubitor has access only to order shown as list and and quantity like that.**
