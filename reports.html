@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Manager Pro - Reports</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Animations & Transitions */
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover { transition: all 0.2s; }
+        .btn-hover:hover { transform: translateY(-1px); filter: brightness(105%); }
+        .btn-hover:active { transform: translateY(0); }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Print Styles - ENHANCED for Full Data Printing */
+        @media print {
+            /* Hide UI Elements */
+            .no-print, #sidebar, #mobileHeader, #toast-container, #sidebarOverlay, #reportActions { 
+                display: none !important; 
+            }
+            
+            /* Global Layout Reset */
+            html, body { 
+                height: auto !important; 
+                width: 100% !important;
+                overflow: visible !important; 
+                position: static !important;
+                background: white !important;
+                display: block !important; 
+                margin: 0 !important;
+            }
+            
+            /* Expand Main Containers */
+            #mainContent { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+                position: static !important;
+                display: block !important; 
+            }
+            
+            #reports, #reportOutput { 
+                display: block !important; 
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                height: auto !important;
+            }
+            
+            /* CRITICAL FIX: Unlock overflow for scrollable table containers */
+            .overflow-x-auto, .overflow-y-auto, .overflow-hidden, .custom-scrollbar {
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+                width: 100% !important;
+                display: block !important;
+            }
+
+            /* Table Optimization */
+            table { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                border: 1px solid #000; 
+                table-layout: auto !important; 
+            }
+            
+            th, td { 
+                border: 1px solid #000 !important; 
+                padding: 4px 6px !important; 
+                font-size: 10pt !important; 
+                color: black !important;
+                white-space: normal !important; 
+            }
+            
+            /* Date Column Strict Single Line */
+            td.date-col {
+                white-space: nowrap !important;
+            }
+
+            th { 
+                background-color: #f0f0f0 !important; 
+                -webkit-print-color-adjust: exact; 
+                font-weight: bold; 
+            }
+            
+            /* Page Breaks */
+            tr { page-break-inside: avoid; }
+            thead { display: table-header-group; } 
+            tfoot { display: table-footer-group; }
+            
+            /* Hide scrollbars */
+            *::-webkit-scrollbar { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col md:flex-row text-slate-800 overflow-hidden">
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Mobile Header -->
+    <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-sm shadow-md">
+                <i class="fas fa-cow"></i>
+            </div>
+            <span class="font-bold text-lg tracking-wide">Dairy<span class="text-brand-400">Pro</span></span>
+        </div>
+        <button onclick="app.toggleSidebar()" class="text-white focus:outline-none p-2 rounded hover:bg-slate-800 transition"><i class="fas fa-bars text-xl"></i></button>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="fixed md:relative inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none whitespace-nowrap overflow-hidden" id="sidebar">
+        <!-- Brand Header -->
+        <div class="p-6 flex justify-between items-center h-20 border-b border-slate-800/50">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand-900 flex-shrink-0">
+                    <i class="fas fa-cow"></i>
+                </div>
+                <div class="flex flex-col sidebar-text">
+                    <span class="font-bold text-lg text-white tracking-wide leading-tight">DairyMgr</span>
+                    <span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Professional</span>
+                </div>
+            </div>
+            <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+             <button onclick="app.toggleSidebarDesktop()" class="hidden md:block text-slate-500 hover:text-white focus:outline-none transition" title="Toggle Menu">
+                <i class="fas fa-chevron-left transition-transform duration-300" id="collapseIcon"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-4 sidebar-text tracking-wider">Operations</p>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Dashboard</span>
+            </button>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Orders & Route</span>
+            </button>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Customers</span>
+            </button>
+
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">Finance</p>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span>
+            </button>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span>
+            </button>
+            
+            <!-- Active Page -->
+            <button class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-800 text-white shadow-lg transition btn-hover group">
+                <i class="fas fa-chart-pie w-5 text-center text-brand-400"></i> <span class="sidebar-text font-medium">Reports</span>
+            </button>
+
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">System</p>
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span>
+            </button>
+        </nav>
+        
+        <!-- User Profile -->
+        <div class="p-4 border-t border-slate-800/50 bg-slate-900/50">
+            <button onclick="window.location.href='index.html'" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm rounded-lg hover:bg-slate-800" title="Logout">
+                <i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i> 
+                <span class="sidebar-text font-medium">Sign Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
+        <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+        
+        <!-- REPORTS SECTION -->
+        <section id="reports" class="fade-in max-w-6xl mx-auto">
+            <div class="flex justify-between items-end mb-6 no-print">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Reports & Analytics</h2>
+                    <p class="text-slate-500 mt-1">Generate financial summaries, day books, and customer ledgers.</p>
+                </div>
+                <button onclick="reportManager.init()" class="text-sm bg-white border border-slate-200 text-slate-500 hover:text-brand-600 px-3 py-2 rounded-lg font-bold transition shadow-sm hover:shadow-md">
+                    <i class="fas fa-sync-alt mr-1"></i> Refresh Data
+                </button>
+            </div>
+
+            <!-- Controls (Grid Layout Update) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    
+                    <div class="w-full">
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">Report Type</label>
+                        <div class="relative">
+                            <i class="fas fa-filter absolute left-3 top-3.5 text-slate-400"></i>
+                            <select id="reportType" class="w-full border border-slate-200 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition appearance-none bg-white" onchange="reportManager.toggleInputs()">
+                                <option value="financial">Daily Sales Statement</option>
+                                <option value="customer_monthly">Customer Statement</option>
+                                <option value="day_book">Day Book (Orders)</option>
+                                <option value="expense_report">Expenses Report</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Date Inputs separated to ensure they take distinct grid cells -->
+                    <div class="w-full">
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">Start Date</label>
+                        <input type="date" id="repStartDate" class="w-full border border-slate-200 px-3 py-3 rounded-xl text-sm font-bold text-slate-600 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition">
+                    </div>
+
+                    <div class="w-full">
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">End Date</label>
+                        <input type="date" id="repEndDate" class="w-full border border-slate-200 px-3 py-3 rounded-xl text-sm font-bold text-slate-600 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition">
+                    </div>
+
+                    <!-- Action Button / Conditional Inputs -->
+                    <div class="w-full flex gap-3">
+                        <div id="repCustomerContainer" class="hidden flex-1">
+                            <!-- Removed Label to save vertical space if needed, or keep it short -->
+                            <div class="relative h-full">
+                                <select id="repCustomer" class="w-full h-[46px] border border-slate-200 pl-2 pr-4 rounded-xl text-sm font-medium focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition appearance-none bg-white"></select>
+                            </div>
+                        </div>
+
+                        <div id="repEmployeeContainer" class="hidden flex-1">
+                            <select id="repEmployee" class="w-full h-[46px] border border-slate-200 px-3 rounded-xl text-sm font-medium focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition bg-white"></select>
+                        </div>
+
+                        <button onclick="reportManager.generate()" class="flex-1 bg-slate-900 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 shadow-lg shadow-slate-200 transition btn-hover h-[46px] flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i class="fas fa-bolt text-yellow-400"></i> Generate
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Output Area -->
+            <div id="reportOutput" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px]">
+                <div class="flex flex-col items-center justify-center h-64 text-slate-400">
+                    <i class="fas fa-chart-bar text-5xl mb-4 text-slate-200"></i>
+                    <p>Select parameters above to generate a report.</p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div id="reportActions" class="hidden flex justify-end gap-3 mt-6 no-print">
+                <button onclick="reportManager.exportCSV()" class="bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-green-100 hover:bg-green-700 text-sm font-bold transition btn-hover flex items-center gap-2">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </button>
+                <button onclick="window.print()" class="bg-brand-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-brand-100 hover:bg-brand-700 text-sm font-bold transition btn-hover flex items-center gap-2">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+
+        // UI Logic for Sidebar
+        const app = {
+            toggleSidebar() {
+                document.getElementById('sidebar').classList.toggle('-translate-x-full');
+                const overlay = document.getElementById('sidebarOverlay');
+                if(overlay) overlay.classList.toggle('hidden');
+            },
+            toggleSidebarDesktop() {
+                const sidebar = document.getElementById('sidebar');
+                const textElements = sidebar.querySelectorAll('.sidebar-text');
+                const icon = document.getElementById('collapseIcon');
+                sidebar.classList.toggle('w-72'); 
+                sidebar.classList.toggle('w-20');
+                textElements.forEach(el => el.classList.toggle('hidden'));
+                icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        };
+
+        // Utility: Toast Notifications
+        const showToast = (msg, type='success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800';
+            const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+            toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[320px] pointer-events-auto backdrop-blur-md bg-opacity-95`;
+            toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0'));
+            setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        // API Wrapper
+        const api = {
+            async get(endpoint) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`);
+                    return await res.json();
+                } catch (e) { showToast('Connection Error', 'error'); return null; }
+            }
+        };
+
+        // Data Store (Metadata Only)
+        const store = {
+            data: { customers: [], products: [], employees: [] },
+            async init() {
+                const data = await api.get('/api/sync');
+                if (data) {
+                    this.data.customers = data.customers || [];
+                    this.data.products = data.products || [];
+                    this.data.employees = data.employees || [];
+                }
+            }
+        };
+
+        // Report Logic
+        const reportManager = {
+            currentData: null,
+            async init() { 
+                // Set default dates
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                document.getElementById('repEndDate').value = today.toISOString().split('T')[0];
+                document.getElementById('repStartDate').value = firstDay.toISOString().split('T')[0];
+
+                // Fetch Metadata
+                await store.init();
+
+                // Populate Customer Dropdown
+                const rCust = document.getElementById('repCustomer');
+                rCust.innerHTML = '<option value="">-- Select Customer --</option>';
+                store.data.customers.forEach(c => rCust.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+
+                // Populate Employee Dropdown
+                const rEmp = document.getElementById('repEmployee');
+                rEmp.innerHTML = '<option value="">All Employees</option>';
+                store.data.employees.forEach(e => rEmp.innerHTML += `<option value="${e.name}">${e.name}</option>`);
+            },
+
+            toggleInputs() { 
+                const t = document.getElementById('reportType').value; 
+                document.getElementById('repCustomerContainer').classList.toggle('hidden', t !== 'customer_monthly'); 
+                document.getElementById('repEmployeeContainer').classList.toggle('hidden', t !== 'expense_report'); 
+            },
+
+            async generate() {
+                const type = document.getElementById('reportType').value;
+                const start = document.getElementById('repStartDate').value;
+                const end = document.getElementById('repEndDate').value;
+                const out = document.getElementById('reportOutput');
+                
+                if(!start || !end) return showToast("Please select a date range", "error");
+
+                // Show Loading
+                out.innerHTML = '<div class="flex justify-center items-center h-64"><i class="fas fa-spinner fa-spin text-4xl text-brand-600"></i></div>';
+                
+                // Fetch Data from Backend
+                const data = await api.get(`/api/reports/data?start=${start}&end=${end}`);
+                
+                if (!data) {
+                    out.innerHTML = '<div class="text-center text-red-500 font-bold p-8">Failed to fetch report data. Check server connection.</div>';
+                    return;
+                }
+                
+                this.currentData = data;
+                document.getElementById('reportActions').classList.remove('hidden');
+                let html = "";
+                
+                const getDates = () => {
+                    let d = new Date(start), e = new Date(end), arr = [];
+                    while(d <= e) { arr.push(d.toISOString().split('T')[0]); d.setDate(d.getDate() + 1); }
+                    return arr;
+                };
+
+                // --- 1. Financial Summary (Daily Sales Statement) ---
+                if(type === 'financial') { 
+                    const dates = getDates();
+                    const products = store.data.products;
+                    const rev = data.orders.reduce((sum, o) => sum + o.total, 0); 
+                    const exp = data.expenses.reduce((sum, e) => sum + e.amount, 0); 
+                    // Profit Removed as requested
+                    
+                    html = `
+                        <div class="text-center mb-8">
+                            <h3 class="font-bold text-2xl text-slate-800">Daily Sales Statement</h3>
+                            <p class="text-slate-500 font-medium">${new Date(start).toLocaleDateString()} — ${new Date(end).toLocaleDateString()}</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center mb-8 max-w-2xl mx-auto">
+                            <div class="bg-green-50 p-6 rounded-2xl border border-green-100 shadow-sm">
+                                <div class="text-xs text-green-800 uppercase font-bold mb-2 tracking-wider">Total Revenue</div>
+                                <div class="text-3xl font-bold text-green-600">₹${rev.toLocaleString()}</div>
+                            </div>
+                            <div class="bg-red-50 p-6 rounded-2xl border border-red-100 shadow-sm">
+                                <div class="text-xs text-red-800 uppercase font-bold mb-2 tracking-wider">Total Expenses</div>
+                                <div class="text-3xl font-bold text-red-600">₹${exp.toLocaleString()}</div>
+                            </div>
+                            <!-- Profit Card Removed -->
+                        </div>
+                        <div class="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl border border-slate-200">
+                            <table class="w-full text-sm text-left border-collapse min-w-[800px]">
+                                <thead class="bg-slate-100 text-slate-500 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm">
+                                    <tr>
+                                        <th class="p-4 border-b border-r border-slate-200 sticky left-0 bg-slate-100 z-20">Date</th>`;
+                    
+                    // Generate Dynamic Product Headers
+                    products.forEach(p => {
+                        html += `<th class="p-4 border-b border-r border-slate-200 text-center">${p.name}</th>`;
+                    });
+
+                    html += `<th class="p-4 border-b text-right">Total Sales</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">`;
+                    
+                    let totalQtyMap = {};
+                    products.forEach(p => totalQtyMap[p.id] = 0);
+
+                    dates.forEach(d => {
+                        const dayOrders = data.orders.filter(o => o.date === d);
+                        const dayTotal = dayOrders.reduce((sum, o) => sum + o.total, 0);
+                        
+                        // Don't skip empty days if you want a complete calendar, but here we can skip if both sales and expenses are 0, OR just check orders
+                        if(dayTotal === 0 && dayOrders.length === 0) return; 
+
+                        // Calculate product quantities for this day
+                        let dayQuantities = {};
+                        products.forEach(p => dayQuantities[p.id] = 0);
+
+                        dayOrders.forEach(o => {
+                            o.items.forEach(item => {
+                                // Find product by name as backend stores item names
+                                const product = products.find(p => p.name === item.name);
+                                if(product) {
+                                    dayQuantities[product.id] += (item.quantity || 0);
+                                }
+                            });
+                        });
+
+                        // Add to totals
+                        products.forEach(p => totalQtyMap[p.id] += dayQuantities[p.id]);
+
+                        html += `<tr>
+                                    <td class="p-4 font-medium text-slate-700 date-col whitespace-nowrap border-r border-slate-100 sticky left-0 bg-white border-b-0">${new Date(d).toLocaleDateString()}</td>`;
+                        
+                        products.forEach(p => {
+                             const qty = dayQuantities[p.id];
+                             html += `<td class="p-4 text-center text-slate-600 border-r border-slate-100">${qty > 0 ? qty : '-'}</td>`;
+                        });
+
+                        html += `<td class="p-4 text-right font-bold text-green-600">₹${dayTotal}</td></tr>`;
+                    });
+
+                    // Total Row
+                    html += `<tr class="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-20 shadow-md">
+                                <td class="p-4 text-right border-r border-slate-200 sticky left-0 bg-slate-50">TOTAL</td>`;
+                    products.forEach(p => {
+                        html += `<td class="p-4 text-center border-r border-slate-200">${totalQtyMap[p.id]}</td>`;
+                    });
+                    html += `<td class="p-4 text-right text-green-700">₹${rev}</td></tr>`;
+
+                    html += `</tbody></table></div>`;
+
+                // --- 2. Day Book ---
+                } else if(type === 'day_book') { 
+                    html = `<div class="text-center mb-6"><h3 class="font-bold text-xl">Day Book (Orders)</h3><p class="text-slate-500 text-sm">${start} to ${end}</p></div>
+                            <div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-500 text-xs uppercase font-bold"><tr><th class="p-4 border-b">Date</th><th class="p-4 border-b">Customer</th><th class="p-4 border-b">Details</th><th class="p-4 border-b text-right">Amount</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100">`; 
+                    const sortedOrders = data.orders.sort((a,b) => new Date(a.date) - new Date(b.date));
+                    if(sortedOrders.length === 0) html += `<tr><td colspan="4" class="p-8 text-center text-slate-500">No orders found.</td></tr>`;
+                    sortedOrders.forEach(o => {
+                        const details = o.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+                        html += `<tr><td class="p-4 text-slate-500 date-col whitespace-nowrap">${o.date}</td><td class="p-4 font-bold text-slate-700">${o.customerName}</td><td class="p-4 text-slate-600 text-xs">${details}</td><td class="p-4 text-right font-bold">₹${o.total}</td></tr>`
+                    }); 
+                    html += "</tbody></table></div>"; 
+
+                // --- 3. Expense Report ---
+                } else if(type === 'expense_report') { 
+                    const empId = document.getElementById('repEmployee').value; 
+                    let filteredExp = data.expenses; 
+                    if(empId) filteredExp = filteredExp.filter(e => e.employeeId === empId); 
+                    
+                    html = `<div class="text-center mb-6"><h3 class="font-bold text-xl">Expense Report</h3><p class="text-slate-500 text-sm">${empId ? 'Staff: ' + empId : 'All Expenses'}</p></div>
+                            <div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-500 text-xs uppercase font-bold"><tr><th class="p-4 border-b">Date</th><th class="p-4 border-b">Category</th><th class="p-4 border-b">Description</th><th class="p-4 border-b text-right">Amount</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100">`; 
+                    
+                    if(filteredExp.length === 0) html += `<tr><td colspan="4" class="p-8 text-center text-slate-500">No expenses found.</td></tr>`;
+                    filteredExp.forEach(e => html += `<tr><td class="p-4 text-slate-500 date-col whitespace-nowrap">${e.date}</td><td class="p-4"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold uppercase">${e.category}</span></td><td class="p-4 font-medium text-slate-700">${e.title}</td><td class="p-4 text-right font-bold text-red-600">₹${e.amount}</td></tr>`); 
+                    html += "</tbody></table></div>"; 
+
+                // --- 4. Customer Monthly Statement ---
+                } else if(type === 'customer_monthly') { 
+                    const cid = document.getElementById('repCustomer').value; 
+                    if(!cid) return showToast("Please select a customer", "error");
+                    
+                    const cust = store.data.customers.find(c => c.id === cid); 
+                    const custOrders = data.orders.filter(o => o.customerId === cid); 
+                    const custPayments = data.payments.filter(p => p.customerId === cid);
+                    const products = store.data.products;
+
+                    html = `<div class="mb-6 border-b border-slate-200 pb-6">
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div>
+                                        <h1 class="text-2xl font-bold text-slate-800">${cust ? cust.name : 'Unknown Customer'}</h1>
+                                        <div class="text-slate-500 mt-1 text-sm"><i class="fas fa-id-badge mr-1"></i> ${cust ? cust.id : ''} &bull; <i class="fas fa-phone ml-2 mr-1"></i> ${cust ? cust.phone : ''}</div>
+                                    </div>
+                                    <div class="text-right flex flex-col items-end">
+                                        <div class="text-xs text-slate-400 font-bold uppercase tracking-wide">Statement Period</div>
+                                        <div class="font-bold text-slate-700 text-lg mb-2">${new Date(start).toLocaleDateString('en-IN')} - ${new Date(end).toLocaleDateString('en-IN')}</div>
+                                        
+                                        <!-- Total Dues in Header for Print Visibility -->
+                                        <div class="bg-red-50 text-red-700 border border-red-100 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                            <span class="text-[10px] uppercase font-bold tracking-wide">Total Pending Dues</span>
+                                            <span class="font-bold text-lg">₹${cust.dues.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="overflow-x-auto border border-slate-300 rounded-lg">
+                                <table class="w-full text-sm text-left border-collapse">
+                                    <thead class="bg-slate-100 text-slate-700 font-bold text-xs uppercase">
+                                        <tr>
+                                            <th class="p-3 border-b border-r border-slate-300 w-24 bg-slate-200">Date</th>`;
+                    products.forEach(p => html += `<th class="p-3 border-b border-r border-slate-300 text-center min-w-[60px]">${p.name}</th>`);
+                    html += `<th class="p-3 border-b border-r border-slate-300 text-right w-24 bg-slate-50">Cost</th>
+                             <th class="p-3 border-b border-slate-300 text-right w-24 bg-green-50 text-green-800">Paid</th>
+                             </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">`;
+                    
+                    let grandTotal = 0; 
+                    let grandPaid = 0;
+                    const prodTotals = {}; 
+                    products.forEach(p => prodTotals[p.id] = 0);
+                    
+                    const dates = getDates();
+
+                    if (dates.length === 0) html += `<tr><td colspan="${products.length + 3}" class="p-8 text-center text-slate-500">No data found for this period.</td></tr>`;
+                    else { 
+                        dates.forEach(d => {
+                            const order = custOrders.find(o => o.date === d);
+                            const pay = custPayments.filter(p => p.date === d).reduce((s, p) => s + p.amount, 0);
+                            
+                            if(!order && pay === 0) return; // Skip empty rows
+
+                            const displayDate = new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); 
+                            html += `<tr><td class="p-2 border-r border-slate-200 font-bold text-slate-600 bg-slate-50/50 date-col whitespace-nowrap">${displayDate}</td>`; 
+                            products.forEach(p => { 
+                                const item = order ? order.items.find(i => i.name === p.name) : null; 
+                                const qty = item ? item.quantity : ''; 
+                                if(item) prodTotals[p.id] += (item.quantity || 0); 
+                                // UPDATED: Changed ${qty || '-'} to ${qty || ''} to remove horizontal line for empty values
+                                html += `<td class="p-2 border-r border-slate-200 text-center ${qty ? 'text-slate-800 font-bold' : 'text-slate-300'}">${qty || ''}</td>`; 
+                            }); 
+                            const cost = order ? order.total : 0;
+                            html += `<td class="p-2 border-r border-slate-200 text-right font-bold text-slate-800 bg-slate-50/30">₹${cost || ''}</td>
+                                     <td class="p-2 text-right font-bold text-green-600 bg-green-50/30">₹${pay || ''}</td></tr>`; 
+                            grandTotal += cost;
+                            grandPaid += pay;
+                        }); 
+                    }
+                    html += `<tr class="bg-slate-800 text-white font-bold border-t-2 border-slate-900">
+                                <td class="p-3 border-r border-slate-700 text-right">TOTAL</td>`;
+                    products.forEach(p => html += `<td class="p-3 border-r border-slate-700 text-center">${prodTotals[p.id]}</td>`);
+                    html += `<td class="p-3 border-r border-slate-700 text-right text-base">₹${grandTotal.toLocaleString()}</td>
+                             <td class="p-3 text-right text-green-300 text-base">₹${grandPaid.toLocaleString()}</td>
+                             </tr></tbody></table></div>`;
+                    
+                    const netPeriod = grandTotal - grandPaid;
+                    const custDues = cust ? cust.dues : 0;
+                    html += `<div class="mt-6 flex flex-col md:flex-row justify-end gap-4">
+                                <div class="p-4 bg-slate-100 rounded-xl border border-slate-200 text-right">
+                                    <div class="text-xs text-slate-500 uppercase font-bold">Period Balance</div>
+                                    <div class="text-xl font-bold ${netPeriod>0 ? 'text-red-600':'text-green-600'}">₹${netPeriod.toLocaleString()}</div>
+                                </div>
+                             </div>`;
+                }
+                out.innerHTML = html;
+            },
+            exportCSV() { 
+                if(!this.currentData) return showToast("Generate a report first", "error");
+                
+                const type = document.getElementById('reportType').value; 
+                let csvContent = "data:text/csv;charset=utf-8,"; 
+                let rows = []; 
+
+                if (type === 'customer_monthly') { 
+                    const cid = document.getElementById('repCustomer').value; 
+                    const products = store.data.products; 
+                    const custOrders = this.currentData.orders.filter(o => o.customerId === cid).sort((a,b) => new Date(a.date) - new Date(b.date)); 
+                    let header = ["Date"]; 
+                    products.forEach(p => header.push(p.name)); 
+                    header.push("Total Cost"); 
+                    rows.push(header); 
+                    custOrders.forEach(o => { 
+                        let row = [o.date]; 
+                        products.forEach(p => { 
+                            const item = o.items.find(i => i.name === p.name); 
+                            row.push(item ? item.quantity : 0); 
+                        }); 
+                        row.push(o.total); 
+                        rows.push(row); 
+                    }); 
+                } else if(type === 'day_book') { 
+                    rows.push(["Date", "Customer", "Amount"]); 
+                    this.currentData.orders.forEach(o => rows.push([o.date, o.customerName, o.total])); 
+                } else if(type === 'financial') {
+                     // Updated CSV logic for Financial (Daily Sales) Report
+                     let header = ["Date"];
+                     const products = store.data.products;
+                     products.forEach(p => header.push(p.name));
+                     header.push("Total Sales");
+                     rows.push(header);
+
+                     const dates = [];
+                     let d = new Date(document.getElementById('repStartDate').value);
+                     const e = new Date(document.getElementById('repEndDate').value);
+                     while(d <= e) { dates.push(d.toISOString().split('T')[0]); d.setDate(d.getDate() + 1); }
+
+                     dates.forEach(d => {
+                        const dayOrders = this.currentData.orders.filter(o => o.date === d);
+                        const dayTotal = dayOrders.reduce((sum, o) => sum + o.total, 0);
+                        if(dayTotal === 0 && dayOrders.length === 0) return;
+
+                        let row = [d];
+                        let dayQuantities = {};
+                        products.forEach(p => dayQuantities[p.id] = 0);
+
+                        dayOrders.forEach(o => {
+                            o.items.forEach(item => {
+                                const product = products.find(p => p.name === item.name);
+                                if(product) dayQuantities[product.id] += (item.quantity || 0);
+                            });
+                        });
+                        
+                        products.forEach(p => row.push(dayQuantities[p.id]));
+                        row.push(dayTotal);
+                        rows.push(row);
+                     });
+                }
+                
+                rows.forEach(r => csvContent += r.join(",") + "\r\n"); 
+                const encodedUri = encodeURI(csvContent); 
+                const link = document.createElement("a"); 
+                link.setAttribute("href", encodedUri); 
+                link.setAttribute("download", `report_${type}.csv`); 
+                document.body.appendChild(link); 
+                link.click(); 
+            }
+        };
+
+        // Initialize App
+        window.onload = () => {
+            reportManager.init();
+        };
+    </script>
+</body>
+</html>

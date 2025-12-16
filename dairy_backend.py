@@ -12,7 +12,8 @@ load_dotenv('data.env')
 app = Flask(__name__)
 CORS(app) 
 
-# Database Setup
+# --- SUPABASE FIX ---
+# SQLAlchemy requires 'postgresql://', but Supabase provides 'postgres://'
 database_url = os.environ.get('DATABASE_URL')
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -89,7 +90,7 @@ class OrderItem(db.Model):
     price = db.Column(db.Float) 
 
     def to_dict(self):
-        return {"name": self.name, "quantity": self.quantity, "price": self.price}
+        return {"id": self.product_id, "name": self.name, "quantity": self.quantity, "price": self.price}
 
 class Payment(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -122,49 +123,37 @@ class Expense(db.Model):
 # --- INITIALIZATION ---
 def init_db():
     with app.app_context():
+        # This creates tables if they don't exist
         db.create_all()
-        # Seed Data matching the image provided by user
-        products_to_seed = [
-            ('p1', 'FCM 1L', 70, 'Pkt'),
-            ('p2', 'FCM 500ml', 35, 'Pkt'),
-            ('p3', 'STD 1L', 65, 'Pkt'),
-            ('p4', 'STD 500ml', 33, 'Pkt'),
-            ('p5', 'TM 1L', 60, 'Pkt'),
-            ('p6', 'TM 500ml', 30, 'Pkt'),
-            ('p7', 'T-SPL 500ml', 32, 'Pkt'),
-            ('p8', 'GOLD Small', 10, 'Pkt'),
-            ('p9', 'TM 130', 15, 'Pkt'),
-            ('p10', 'Curd 500gm', 25, 'Pkt'),
-            ('p11', 'Curd Loose', 50, 'Kg'),
-            ('p12', 'DTM 90', 20, 'Pkt'),
-            ('p13', 'Skim 10kg', 300, 'Bag'),
-            ('p14', 'TM 10kg', 400, 'Bag'),
-            ('p15', 'Bkt 5kg', 150, 'Bkt'),
-            ('p16', 'Bkt 1kg', 40, 'Bkt'),
-            ('p17', 'Paneer 1kg', 350, 'Kg'),
-            ('p18', 'Paneer 500g', 180, 'Pkt'),
-            ('p19', 'Paneer 200g', 80, 'Pkt'),
-            ('p20', 'Can 20kg', 1200, 'Can'),
-            ('p21', 'Cowa 500g', 150, 'Pkt'),
-            ('p22', 'Cowa 1kg', 300, 'Kg'),
-            ('p23', 'Milk Badam', 20, 'Bottle'),
-            ('p24', 'Butter', 500, 'Kg'),
-            ('p25', 'Ghee', 600, 'Kg'),
-        ]
+        print("Database initialized. Tables ready.")
         
-        # Only seed if table is completely empty to avoid duplicates
+        # Seed Data (Simplified check)
         if not Product.query.first():
-            print("Seeding Extensive Product Data...")
+            print("Seeding Initial Products...")
+            products_to_seed = [
+                ('p1', 'FCM 1L', 70, 'Pkt'), ('p2', 'FCM 500ml', 35, 'Pkt'), ('p3', 'STD 1L', 65, 'Pkt'),
+                ('p4', 'STD 500ml', 33, 'Pkt'), ('p5', 'TM 1L', 60, 'Pkt'), ('p6', 'TM 500ml', 30, 'Pkt'),
+                ('p7', 'T-SPL 500ml', 32, 'Pkt'), ('p8', 'GOLD Small', 10, 'Pkt'), ('p9', 'TM 130', 15, 'Pkt'),
+                ('p10', 'Curd 500gm', 25, 'Pkt'), ('p11', 'Curd Loose', 50, 'Kg'), ('p12', 'DTM 90', 20, 'Pkt'),
+                ('p13', 'Skim 10kg', 300, 'Bag'), ('p14', 'TM 10kg', 400, 'Bag'), ('p15', 'Bkt 5kg', 150, 'Bkt'),
+                ('p16', 'Bkt 1kg', 40, 'Bkt'), ('p17', 'Paneer 1kg', 350, 'Kg'), ('p18', 'Paneer 500g', 180, 'Pkt'),
+                ('p19', 'Paneer 200g', 80, 'Pkt'), ('p20', 'Can 20kg', 1200, 'Can'), ('p21', 'Cowa 500g', 150, 'Pkt'),
+                ('p22', 'Cowa 1kg', 300, 'Kg'), ('p23', 'Milk Badam', 20, 'Bottle'), ('p24', 'Butter', 500, 'Kg'),
+                ('p25', 'Ghee', 600, 'Kg'),
+            ]
             for pid, pname, pprice, punit in products_to_seed:
                 db.session.add(Product(id=pid, name=pname, price=pprice, unit=punit))
             db.session.commit()
-            print("Seeding Complete.")
 
 # --- ROUTES ---
 
 @app.route('/')
 def home():
     return send_file('index.html')
+
+@app.route('/reports')
+def reports_page():
+    return send_file('reports.html')
 
 # 1. AUTH & SYNC
 @app.route('/api/login', methods=['POST'])
@@ -181,6 +170,8 @@ def sync_data():
     employees = [e.to_dict() for e in Employee.query.all()]
     recent_payments = [p.to_dict() for p in Payment.query.order_by(Payment.date.desc()).limit(1000).all()]
     expenses = [e.to_dict() for e in Expense.query.order_by(Expense.date.desc()).limit(1000).all()]
+    
+    # Get recent orders
     year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
     recent_orders = [o.to_dict() for o in Order.query.filter(Order.date >= year_ago).all()]
     
@@ -210,8 +201,19 @@ def update_customer(id):
     c.name = data['name']
     c.phone = data['phone']
     c.address = data.get('address')
+    # If explicit update of dues is needed by admin (caution advised)
+    if 'dues' in data:
+        c.dues = float(data['dues'])
     db.session.commit()
     return jsonify(c.to_dict())
+
+@app.route('/api/customers/<id>', methods=['DELETE'])
+def delete_customer(id):
+    c = Customer.query.get(id)
+    if c:
+        db.session.delete(c)
+        db.session.commit()
+    return jsonify({"message": "Deleted"})
 
 @app.route('/api/customers/<cid>/rates', methods=['POST'])
 def update_rates(cid):
@@ -232,7 +234,11 @@ def update_rates(cid):
         if draft_order:
             new_total = 0
             for item in draft_order.items:
-                prod = Product.query.filter_by(name=item.name).first()
+                prod = Product.query.get(item.product_id) # Look up by ID now
+                if not prod: 
+                    # Fallback to name match if ID missing in old data
+                    prod = Product.query.filter_by(name=item.name).first()
+                
                 if prod:
                     new_rate = rates_map.get(prod.id, prod.price)
                     item.price = new_rate
@@ -242,7 +248,7 @@ def update_rates(cid):
     db.session.commit()
     return jsonify({"message": "Rates updated", "draft_updated": updated_draft})
 
-# 3. ORDERS
+# 3. ORDERS - FIXED: Updates Logic
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
     date_str = request.args.get('date')
@@ -255,36 +261,62 @@ def save_orders():
     date_str = data['date']
     incoming_orders = data['orders']
     count = 0
-    total_added_to_dues = 0
-
+    
     for ord_data in incoming_orders:
-        existing = Order.query.filter_by(customer_id=ord_data['customerId'], date=date_str).first()
+        customer_id = ord_data['customerId']
+        cust = Customer.query.get(customer_id)
+        if not cust: continue
+
+        existing = Order.query.filter_by(customer_id=customer_id, date=date_str).first()
+        
+        # 1. Handle Dues Reversal if updating an already finalized order
+        if existing and existing.status == 'finalized':
+            # Reverse the old amount from customer dues before applying new amount
+            cust.dues -= existing.total
+        
+        # 2. Update or Create
         if existing:
-            if existing.status == 'finalized': continue
             existing.total = ord_data['total']
             existing.status = ord_data['status']
+            existing.customer_name = ord_data['customerName'] # Update name in case changed
+            
+            # Clear items and recreate with Product IDs
             OrderItem.query.filter_by(order_id=existing.id).delete()
             for i in ord_data['items']:
-                db.session.add(OrderItem(order_id=existing.id, name=i['name'], quantity=i['quantity'], price=i['price']))
-            if ord_data['status'] == 'finalized':
-                cust = Customer.query.get(ord_data['customerId'])
-                cust.dues += existing.total
-                total_added_to_dues += existing.total
+                db.session.add(OrderItem(
+                    order_id=existing.id, 
+                    product_id=i.get('productId'), # Ensure we use ID
+                    name=i['name'], 
+                    quantity=i['quantity'], 
+                    price=i['price']
+                ))
         else:
             new_order = Order(
-                id=ord_data['id'], customer_id=ord_data['customerId'], customer_name=ord_data['customerName'],
-                date=date_str, status=ord_data['status'], total=ord_data['total']
+                id=ord_data['id'], 
+                customer_id=customer_id, 
+                customer_name=ord_data['customerName'],
+                date=date_str, 
+                status=ord_data['status'], 
+                total=ord_data['total']
             )
             db.session.add(new_order)
             for i in ord_data['items']:
-                db.session.add(OrderItem(order_id=new_order.id, name=i['name'], quantity=i['quantity'], price=i['price']))
-            if ord_data['status'] == 'finalized':
-                cust = Customer.query.get(ord_data['customerId'])
-                cust.dues += new_order.total
-                total_added_to_dues += new_order.total
+                db.session.add(OrderItem(
+                    order_id=new_order.id, 
+                    product_id=i.get('productId'), # Ensure we use ID
+                    name=i['name'], 
+                    quantity=i['quantity'], 
+                    price=i['price']
+                ))
+                
+        # 3. Apply New Dues if Finalized
+        if ord_data['status'] == 'finalized':
+            cust.dues += ord_data['total']
+            
         count += 1
+        
     db.session.commit()
-    return jsonify({"message": f"Processed {count} orders", "dues_added": total_added_to_dues})
+    return jsonify({"message": f"Processed {count} orders. Ledgers updated."})
 
 # 4. PAYMENTS & EXPENSES
 @app.route('/api/payments', methods=['POST'])
@@ -295,10 +327,11 @@ def add_payment():
         amount=data['amount'], date=data['date'], collected_by=data.get('collectedBy'), note=data.get('note')
     )
     cust = Customer.query.get(data['customerId'])
-    cust.dues -= float(data['amount'])
+    if cust:
+        cust.dues -= float(data['amount'])
     db.session.add(new_pay)
     db.session.commit()
-    return jsonify({"message": "Payment recorded", "new_dues": cust.dues})
+    return jsonify({"message": "Payment recorded", "new_dues": cust.dues if cust else 0})
 
 @app.route('/api/expenses', methods=['GET', 'POST'])
 def manage_expenses():
@@ -340,40 +373,57 @@ def get_report_data():
         "expenses": [e.to_dict() for e in expenses]
     })
 
-# 6. DASHBOARD
+# 6. DASHBOARD - FIXED: Historic Calculation
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard_stats():
+    # Target Date
     date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    current_date = datetime.strptime(date_str, '%Y-%m-%d')
-    prev_date_str = (current_date - timedelta(days=1)).strftime('%Y-%m-%d')
-
-    today_orders = Order.query.filter_by(date=date_str).all()
-    revenue_all = sum(o.total for o in today_orders)
-    revenue_final = sum(o.total for o in today_orders if o.status == 'finalized')
-
-    prev_orders = Order.query.filter_by(date=prev_date_str).all()
-    prev_revenue_final = sum(o.total for o in prev_orders if o.status == 'finalized')
-
-    pct_change = 0
-    if prev_revenue_final > 0:
-        pct_change = ((revenue_final - prev_revenue_final) / prev_revenue_final) * 100
-    elif revenue_final > 0:
-        pct_change = 100
-
-    today_payments = Payment.query.filter_by(date=date_str).all()
-    collection = sum(p.amount for p in today_payments)
-
-    total_dues = db.session.query(func.sum(Customer.dues)).scalar() or 0
-    opening_dues = (total_dues + collection) - revenue_final
+    
+    # 1. Get Live Total Dues (The absolute truth right now)
+    live_total_dues = db.session.query(func.sum(Customer.dues)).scalar() or 0
     active_customers = Customer.query.filter_by(status='Active').count()
 
+    # 2. Walk-back Algorithm
+    # To find the state of the system on `date_str`, we must reverse 
+    # all transactions that happened AFTER `date_str`.
+    
+    future_orders = Order.query.filter(and_(Order.date > date_str, Order.status == 'finalized')).all()
+    future_payments = Payment.query.filter(Payment.date > date_str).all()
+    
+    # Closing Balance of Selected Date = Live Dues - Future Sales + Future Payments
+    future_sales_sum = sum(o.total for o in future_orders)
+    future_payments_sum = sum(p.amount for p in future_payments)
+    
+    closing_balance_selected_date = live_total_dues - future_sales_sum + future_payments_sum
+    
+    # 3. Calculate Day Specifics
+    today_orders = Order.query.filter_by(date=date_str).all()
+    revenue_finalized = sum(o.total for o in today_orders if o.status == 'finalized')
+    
+    today_payments = Payment.query.filter_by(date=date_str).all()
+    collection_today = sum(p.amount for p in today_payments)
+    
+    # 4. Opening Balance = Closing Balance - Today's Sales + Today's Collection
+    opening_balance = closing_balance_selected_date - revenue_finalized + collection_today
+
+    # 5. Percentage Change Logic
+    prev_date_str = (datetime.strptime(date_str, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+    prev_orders = Order.query.filter_by(date=prev_date_str).all()
+    prev_revenue = sum(o.total for o in prev_orders if o.status == 'finalized')
+    
+    pct_change = 0
+    if prev_revenue > 0:
+        pct_change = ((revenue_finalized - prev_revenue) / prev_revenue) * 100
+    elif revenue_finalized > 0:
+        pct_change = 100
+
     return jsonify({
-        "revenue_today": revenue_all,
-        "revenue_finalized": revenue_final,
+        "revenue_today": sum(o.total for o in today_orders), # Includes draft
+        "revenue_finalized": revenue_finalized,
         "revenue_pct_change": round(pct_change, 1),
-        "collection_today": collection,
-        "total_dues": total_dues,
-        "opening_balance": opening_dues,
+        "collection_today": collection_today,
+        "total_dues": round(closing_balance_selected_date, 2), # This is the dues at END of selected day
+        "opening_balance": round(opening_balance, 2), # This is the dues at START of selected day
         "active_customers": active_customers
     })
 
