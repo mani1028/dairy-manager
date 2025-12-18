@@ -85,23 +85,16 @@
         </div>
     </div>
 
-    <!-- Login/Register Screen -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center fade-in relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-                <div class="mb-6">
-    <div class="h-16 w-16 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4 shadow-lg shadow-brand-200 rotate-3"><i class="fas fa-cow"></i></div>
-    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dairy Manager <span class="text-brand-600">Pro</span></h1>
-    
-    <p class="text-slate-400 text-sm mt-2 font-medium">Authorized Personnel Only</p>
-                    
-                <!-- Toggle Tabs -->
-                <div class="flex justify-center gap-4 mt-6 border-b border-slate-100 pb-1">
-                    <button onclick="auth.toggleMode('login')" id="tabLogin" class="text-sm font-bold text-brand-600 border-b-2 border-brand-600 pb-2 px-4 transition">Login</button>
-                     </div>
+            
+            <div class="mb-6">
+                <div class="h-16 w-16 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4 shadow-lg shadow-brand-200 rotate-3"><i class="fas fa-cow"></i></div>
+                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dairy Manager <span class="text-brand-600">Pro</span></h1>
+                <p class="text-sm text-slate-400 mt-2 font-medium">Authorized Personnel Only</p>
             </div>
 
-            <!-- Login Form -->
             <form id="loginForm" onsubmit="auth.login(event)" class="space-y-4 text-left">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Username</label>
@@ -113,15 +106,14 @@
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-200 btn-hover mt-2">Sign In</button>
             </form>
+        </div>
+    </div>
 
-            
-    <!-- Mobile Header -->
     <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
         <div class="flex items-center gap-3"><div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-sm shadow-md"><i class="fas fa-cow"></i></div><span class="font-bold text-lg tracking-wide">Dairy<span class="text-brand-400">Pro</span></span></div>
         <button onclick="app.toggleSidebar()" class="text-white focus:outline-none p-2 rounded hover:bg-slate-800 transition"><i class="fas fa-bars text-xl"></i></button>
     </div>
 
-    <!-- Sidebar -->
     <aside class="fixed md:relative inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none whitespace-nowrap overflow-hidden" id="sidebar">
         <div class="p-6 flex justify-between items-center h-20 border-b border-slate-800/50">
             <div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand-900 flex-shrink-0"><i class="fas fa-cow"></i></div><div class="flex flex-col sidebar-text"><span class="font-bold text-lg text-white tracking-wide leading-tight" id="sidebarBrandName">DairyMgr</span><span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Professional</span></div></div>
@@ -150,7 +142,6 @@
     <main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
         <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
         
-        <!-- DASHBOARD -->
         <section id="dashboard" class="view-section fade-in">
             <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
                 <div>
@@ -209,7 +200,6 @@
             </div>
         </section>
 
-        <!-- CUSTOMERS -->
         <section id="customers" class="view-section hidden fade-in">
             <div class="flex justify-between items-center mb-6">
                 <div><h2 class="text-2xl font-bold text-slate-800">Customers</h2><p class="text-slate-500 text-sm">Manage your client base</p></div>
@@ -229,7 +219,6 @@
             </div>
         </section>
 
-        <!-- ORDERS -->
         <section id="orders" class="view-section hidden fade-in">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 no-print">
                 <div><h2 class="text-2xl font-bold text-slate-800">Daily Route</h2><p class="text-slate-500 text-sm">Manage deliveries and print route sheets.</p></div>
@@ -268,7 +257,6 @@
             </div>
         </section>
 
-        <!-- BILLING -->
         <section id="billing" class="view-section hidden fade-in">
             <h2 class="text-2xl font-bold text-slate-800 mb-6">Billing & Payments</h2>
             <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl mb-8 flex justify-between items-center shadow-sm relative overflow-hidden">
@@ -305,7 +293,6 @@
             </div>
         </section>
 
-        <!-- INVOICE VIEW -->
         <section id="invoice-view" class="view-section hidden bg-white p-10 max-w-4xl mx-auto shadow-xl my-8 print:shadow-none print:w-full print:m-0 rounded-2xl">
             <h2 class="text-3xl font-bold text-slate-900 mb-1">INVOICE / STATEMENT</h2>
             <div class="text-sm text-slate-500 mb-6 flex justify-between items-end">
@@ -320,7 +307,6 @@
             </div>
         </section>
 
-        <!-- EXPENSES -->
         <section id="expenses" class="view-section hidden fade-in">
             <h2 class="text-2xl font-bold text-slate-800 mb-6">Expense Manager</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -347,7 +333,6 @@
             </div>
         </section>
 
-        <!-- SETTINGS -->
         <section id="settings" class="view-section hidden fade-in">
             <h2 class="text-2xl font-bold text-slate-800 mb-6">System Settings</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -363,7 +348,6 @@
         </section>
     </main>
 
-    <!-- Modals (Customer, Rate, Employee) remain same as before -->
     <div id="customerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 fade-in">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
             <div class="p-6 border-b bg-slate-50 flex-shrink-0 flex justify-between items-center rounded-t-2xl"><h3 class="font-bold text-lg text-slate-800" id="modalTitle">Add Customer</h3><button onclick="customerManager.closeModal()" class="text-slate-400 hover:text-red-500 transition text-lg"><i class="fas fa-times"></i></button></div>
@@ -381,7 +365,6 @@
         </div>
     </div>
 
-    <!-- RATE MODAL -->
     <div id="rateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 fade-in">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
             <div class="p-6 border-b bg-slate-50 flex-shrink-0 flex justify-between items-center rounded-t-2xl"><h3 class="font-bold text-lg text-slate-800">Manage Rates</h3><button onclick="document.getElementById('rateModal').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition text-lg"><i class="fas fa-times"></i></button></div>
@@ -399,7 +382,6 @@
         </div>
     </div>
 
-    <!-- EMPLOYEE MODAL -->
     <div id="employeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 fade-in">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="p-6 border-b bg-slate-50 flex justify-between items-center"><h3 class="font-bold text-lg text-slate-800">Add Staff Member</h3><button onclick="settingsManager.closeEmployeeModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button></div>
@@ -413,8 +395,9 @@
     </div>
 
     <script>
-        // --- FIXED API URL (REMOVED TRAILING SLASH) ---
-        const API_BASE = "https://dairy-manager.onrender.com";
+        // --- PRODUCTION CONFIG ---
+        // Empty string means "use same origin as frontend" (works for relative paths)
+        const API_BASE = "";
 
         const showToast = (msg, type='success') => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800'; const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'; toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[320px] pointer-events-auto backdrop-blur-md bg-opacity-95`; toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000); };
         const ui = { confirmCallback: null, showConfirm(title, msg, callback) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmMsg').innerText = msg; this.confirmCallback = callback; document.getElementById('confirmModal').classList.remove('hidden'); document.getElementById('confirmYesBtn').focus(); }, closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); this.confirmCallback = null; }, triggerConfirm() { if(this.confirmCallback) this.confirmCallback(); this.closeConfirm(); } }; document.getElementById('confirmYesBtn').onclick = () => ui.triggerConfirm();
@@ -433,7 +416,7 @@
             },
             async post(endpoint, body) {
                 try {
-                    const headers = (endpoint === '/api/login' || endpoint === '/api/register') ? { 'Content-Type': 'application/json' } : this.getHeaders();
+                    const headers = (endpoint === '/api/login') ? { 'Content-Type': 'application/json' } : this.getHeaders();
                     const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: headers, body: JSON.stringify(body) });
                     if (res.status === 401 && endpoint !== '/api/login') { auth.logout(); return null; }
                     const data = await res.json();
@@ -463,23 +446,6 @@
         const chartManager = { mode: 'week', chart: null, setMode(mode) { this.mode = mode; document.querySelectorAll('.chart-btn').forEach(b => { b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800'); b.classList.add('text-slate-500'); }); document.getElementById(`btn-${mode}`).classList.add('bg-white', 'shadow-sm', 'text-slate-800'); document.getElementById(`btn-${mode}`).classList.remove('text-slate-500'); this.render(document.getElementById('dashboardDate').value); }, render(selectedDateStr) { const ctx = document.getElementById('salesChart'); if(!ctx) return; const selectedDate = new Date(selectedDateStr); const labels = [], dataPoints = []; let daysToFetch = this.mode === 'week' ? 7 : 30; let dateFormat = this.mode === 'week' ? {weekday:'short'} : {day:'numeric', month:'short'}; for(let i=daysToFetch-1; i>=0; i--) { const d = new Date(selectedDate); d.setDate(d.getDate() - i); const dateStr = d.toISOString().split('T')[0]; labels.push(d.toLocaleDateString('en-IN', dateFormat)); const dailyTotal = store.data.orders.filter(o => o.date === dateStr).reduce((sum, o) => sum + o.total, 0); dataPoints.push(dailyTotal); } if(this.chart) this.chart.destroy(); this.chart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Sales (₹)', data: dataPoints, backgroundColor: '#2563eb', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display:false } }, x: { grid: { display: false } } } } }); } };
         
         const auth = { 
-            toggleMode(mode) {
-                if(mode === 'login') {
-                    document.getElementById('loginForm').classList.remove('hidden');
-                    document.getElementById('registerForm').classList.add('hidden');
-                    document.getElementById('tabLogin').classList.add('border-brand-600', 'text-brand-600');
-                    document.getElementById('tabLogin').classList.remove('text-slate-400');
-                    document.getElementById('tabRegister').classList.remove('border-brand-600', 'text-brand-600');
-                    document.getElementById('tabRegister').classList.add('text-slate-400');
-                } else {
-                    document.getElementById('loginForm').classList.add('hidden');
-                    document.getElementById('registerForm').classList.remove('hidden');
-                    document.getElementById('tabRegister').classList.add('border-brand-600', 'text-brand-600');
-                    document.getElementById('tabRegister').classList.remove('text-slate-400');
-                    document.getElementById('tabLogin').classList.remove('border-brand-600', 'text-brand-600');
-                    document.getElementById('tabLogin').classList.add('text-slate-400');
-                }
-            },
             async login(e) { 
                 e.preventDefault(); 
                 const u = document.getElementById('username').value; 
@@ -488,18 +454,11 @@
                 if(res && res.token) { 
                     localStorage.setItem('dm_token', res.token);
                     localStorage.setItem('dm_tenant', res.tenant_id);
-                    localStorage.setItem('dm_business_name', res.business_name); // Store Shop Name
+                    localStorage.setItem('dm_business_name', res.business_name);
                     document.getElementById('loginScreen').classList.add('hidden'); 
                     app.init(); 
                 } 
             }, 
-            
-            async resetDb() {
-                if(confirm("DANGER: This will delete ALL data for ALL users. Only do this if you are stuck with schema errors. Continue?")) {
-                    const res = await api.get('/api/debug/reset_db');
-                    if(res) alert(res.message);
-                }
-            },
             logout() { 
                 localStorage.removeItem('dm_token');
                 localStorage.removeItem('dm_tenant');
@@ -516,7 +475,6 @@
 
         const app = { 
             async init() { 
-                // Display Shop Name in Dashboard Title and Sidebar
                 const shopName = localStorage.getItem('dm_business_name') || 'Dashboard';
                 document.getElementById('dashboardShopTitle').innerText = shopName;
                 document.getElementById('sidebarBrandName').innerText = shopName;
@@ -555,7 +513,6 @@
 
         const orderManager = {
             isLocked: false,
-            // Stores visible columns for the current view
             currentVisibleProducts: [], 
             async render() {
                 const dateInput = document.getElementById('orderDate').value;
@@ -567,8 +524,6 @@
                 
                 await app.fetchOrdersForDate(dateInput); 
                 
-                // Logic: Sheet is Locked ONLY if status is 'finalized'. 
-                // Unlocked by default for past, present, and future until finalized.
                 const isFinalized = store.data.customers.some(c => { 
                     const o = store.data.orders.find(ord => ord.customerId === c.id && ord.date === dateInput); 
                     return o && o.status === 'finalized'; 
@@ -577,13 +532,8 @@
                 this.isLocked = isFinalized; 
                 this.updateLockUI();
 
-                // SMART COLUMNS LOGIC:
-                // Show product IF: 
-                // 1. Product is Active (isActive !== false)
-                // 2. OR Product is Inactive BUT has quantities > 0 for ANY customer on THIS date (Historical View)
                 this.currentVisibleProducts = store.data.products.filter(p => {
-                    if (p.isActive !== false) return true; // Active products always shown
-                    // For inactive products, check if they are used in this day's orders
+                    if (p.isActive !== false) return true;
                     const isUsed = store.data.customers.some(c => {
                         const order = store.data.orders.find(o => o.customerId === c.id && o.date === dateInput);
                         if (!order || !order.items) return false;
@@ -602,12 +552,11 @@
                 
                 store.data.customers.forEach((c, cIdx) => {
                     const order = store.data.orders.find(o => o.customerId === c.id && o.date === dateInput);
-                    // Generate inputs only for visible products
                     const inputs = this.currentVisibleProducts.map((p, pIdx) => {
                          let qty = '';
                          if(order && order.items) {
                              let item = order.items.find(i => i.id === p.id);
-                             if(!item) item = order.items.find(i => i.name === p.name); // Legacy Fallback
+                             if(!item) item = order.items.find(i => i.name === p.name); 
                              if(item) qty = item.quantity;
                          }
                          return `<td class="p-0 border-r border-slate-50"><input type="number" id="ord_${c.id}_${p.id}" ${this.isLocked ? 'disabled' : ''} min="0" value="${qty}" class="w-full border-0 border-b-2 border-transparent hover:border-slate-200 focus:border-brand-500 rounded-none text-center py-2 bg-transparent focus:bg-brand-50 quantity-input text-sm font-bold h-10 transition-colors ${this.isLocked ? 'text-slate-400 cursor-not-allowed' : ''}" data-pid="${p.id}" data-row="${cIdx}" data-col="${pIdx}" oninput="orderManager.updateTotals()" onkeydown="orderManager.handleKeyNav(event, this)"></td>`
@@ -636,7 +585,6 @@
             },
             async changeDate(days) { const input = document.getElementById('orderDate'); const current = new Date(input.value); current.setDate(current.getDate() + days); input.value = current.toISOString().split('T')[0]; this.render(); },
             updateTotals() {
-                // Only calculate totals for visible products
                 const totals = {}; this.currentVisibleProducts.forEach(p => totals[p.id] = 0);
                 document.querySelectorAll('.quantity-input').forEach(input => { const pid = input.dataset.pid; if(totals[pid] !== undefined) totals[pid] += (parseInt(input.value) || 0); });
                 let footerHtml = '<tr class="bg-slate-100 font-bold sticky bottom-0 z-20"><td class="p-3 text-right sticky left-0 bg-slate-100 border-r border-slate-200">Total:</td>';
@@ -655,8 +603,6 @@
                 const ordersToSave = [];
                 store.data.customers.forEach(c => {
                     const items = []; let total = 0;
-                    // Iterate through VISIBLE products to save what's on screen. 
-                    // Note: If a product is hidden (deleted + no historical data), it won't be saved here, which is correct (removes the record).
                     this.currentVisibleProducts.forEach(p => { 
                         const input = document.getElementById(`ord_${c.id}_${p.id}`);
                         const q = parseInt(input?.value || 0); 
@@ -699,9 +645,4 @@
         };
     </script>
 </body>
-
 </html>
-
-
-
-
