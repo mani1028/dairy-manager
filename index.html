@@ -97,8 +97,7 @@
                 <!-- Toggle Tabs -->
                 <div class="flex justify-center gap-4 mt-6 border-b border-slate-100 pb-1">
                     <button onclick="auth.toggleMode('login')" id="tabLogin" class="text-sm font-bold text-brand-600 border-b-2 border-brand-600 pb-2 px-4 transition">Login</button>
-                    <button onclick="auth.toggleMode('register')" id="tabRegister" class="text-sm font-bold text-slate-400 pb-2 px-4 hover:text-slate-600 transition">Register New Dairy</button>
-                </div>
+                     </div>
             </div>
 
             <!-- Login Form -->
@@ -114,33 +113,7 @@
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-200 btn-hover mt-2">Sign In</button>
             </form>
 
-            <!-- Register Form -->
-            <form id="registerForm" onsubmit="auth.register(event)" class="space-y-4 text-left hidden">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Dairy Name</label>
-                        <input type="text" id="regName" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition text-sm" placeholder="e.g. Laxmi Dairy" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Location</label>
-                        <input type="text" id="regLoc" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition text-sm" placeholder="e.g. Warangal" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Username</label>
-                    <input type="text" id="regUser" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="Username" required>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Password</label>
-                    <input type="password" id="regPass" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="Password" required>
-                </div>
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-green-200 btn-hover mt-2">Create Account</button>
-            </form>
-
-            <button onclick="auth.resetDb()" class="mt-6 text-xs text-red-300 hover:text-red-500 underline">Reset Database (Dev Only)</button>
-        </div>
-    </div>
-
+            
     <!-- Mobile Header -->
     <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
         <div class="flex items-center gap-3"><div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-sm shadow-md"><i class="fas fa-cow"></i></div><span class="font-bold text-lg tracking-wide">Dairy<span class="text-brand-400">Pro</span></span></div>
@@ -746,3 +719,4 @@
 </body>
 
 </html>
+
