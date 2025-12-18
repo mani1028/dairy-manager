@@ -36,6 +36,31 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+DEFAULT_PRODUCTS = [
+    {'code': 'p1', 'name': 'FCM 1L', 'price': 70, 'unit': 'Pkt'},
+    {'code': 'p2', 'name': 'FCM 500ml', 'price': 35, 'unit': 'Pkt'},
+    {'code': 'p3', 'name': 'STD 1L', 'price': 65, 'unit': 'Pkt'},
+    {'code': 'p4', 'name': 'STD 500ml', 'price': 33, 'unit': 'Pkt'},
+    {'code': 'p5', 'name': 'TM 1L', 'price': 60, 'unit': 'Pkt'},
+    {'code': 'p6', 'name': 'TM 500ml', 'price': 30, 'unit': 'Pkt'},
+    {'code': 'p7', 'name': 'T-SPL 500ml', 'price': 32, 'unit': 'Pkt'},
+    {'code': 'p8', 'name': 'GOLD Small', 'price': 10, 'unit': 'Pkt'},
+    {'code': 'p10', 'name': 'Curd 500gm', 'price': 25, 'unit': 'Pkt'},
+    {'code': 'p11', 'name': 'DTM 900gm', 'price': 50, 'unit': 'Kg'},
+    {'code': 'p12', 'name': 'Skim 10kg', 'price': 450, 'unit': 'bkt'},
+    {'code': 'p13', 'name': 'DTM 10kg', 'price': 500, 'unit': 'bkt'},
+    {'code': 'p14', 'name': 'TM 10kg', 'price': 300, 'unit': 'bkt'},
+    {'code': 'p15', 'name': '5kg BKT', 'price': 300, 'unit': 'bkt'},
+    {'code': 'p16', 'name': 'Paneer 1kg', 'price': 350, 'unit': 'pkt'},
+    {'code': 'p17', 'name': 'Paneer 500gm', 'price': 300, 'unit': 'pkt'},
+    {'code': 'p18', 'name': '20kg can', 'price': 300, 'unit': 'bkt'},
+    {'code': 'p19', 'name': 'COWA 500gm', 'price': 300, 'unit': 'kg'},
+    {'code': 'p20', 'name': 'Cowa 1kg', 'price': 300, 'unit': 'kg'},
+    {'code': 'p21', 'name': 'Badam Milk', 'price': 300, 'unit': 'pkt'},
+    {'code': 'p24', 'name': 'Butter', 'price': 500, 'unit': 'Kg'},
+    {'code': 'p25', 'name': 'Ghee', 'price': 600, 'unit': 'Kg'},
+]
+
 # --- MULTI-TENANT MODELS ---
 
 class DairyTenant(db.Model):
@@ -536,5 +561,6 @@ with app.app_context():
 if __name__ == '__main__':
     # This block is only for local testing via 'python app.py'
     app.run(debug=False, port=5000)
+
 
 
