@@ -18,12 +18,19 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-secure-random-key-in-production')
 CORS(app) 
 
-# --- DATABASE SETUP ---
+# --- DATABASE SETUP (FIXED) ---
+# 1. Get the URL from environment (Render sets this automatically)
 database_url = os.environ.get('DATABASE_URL')
+
+# 2. Fallback for local testing (Your Supabase URL)
+if not database_url:
+    database_url = "postgresql://postgres.tkgnfijktdmvgvsdbneq:IKyNw6s0HdwGpKQ1@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
+
+# 3. Fix the 'postgres://' vs 'postgresql://' issue
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///dairy_manager.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
