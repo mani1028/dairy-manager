@@ -529,8 +529,12 @@ def mod_product(id):
     db.session.commit()
     return jsonify({"message": "Success"})
 
+
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    # PRODUCTION SETTING: Debug is now False
+    # This block is only for local testing via 'python app.py'
     app.run(debug=False, port=5000)
+
+
