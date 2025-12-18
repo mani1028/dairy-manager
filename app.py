@@ -14,7 +14,8 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 load_dotenv('data.env') 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-dairy-manager-99')
+# PRODUCTION NOTE: Change this key in your environment variables for security
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-secure-random-key-in-production')
 CORS(app) 
 
 # --- DATABASE SETUP ---
@@ -27,32 +28,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-# --- CONSTANTS ---
-DEFAULT_PRODUCTS = [
-    {'code': 'p1', 'name': 'FCM 1L', 'price': 70, 'unit': 'Pkt'},
-    {'code': 'p2', 'name': 'FCM 500ml', 'price': 35, 'unit': 'Pkt'},
-    {'code': 'p3', 'name': 'STD 1L', 'price': 65, 'unit': 'Pkt'},
-    {'code': 'p4', 'name': 'STD 500ml', 'price': 33, 'unit': 'Pkt'},
-    {'code': 'p5', 'name': 'TM 1L', 'price': 60, 'unit': 'Pkt'},
-    {'code': 'p6', 'name': 'TM 500ml', 'price': 30, 'unit': 'Pkt'},
-    {'code': 'p7', 'name': 'T-SPL 500ml', 'price': 32, 'unit': 'Pkt'},
-    {'code': 'p8', 'name': 'GOLD Small', 'price': 10, 'unit': 'Pkt'},
-    {'code': 'p10', 'name': 'Curd 500gm', 'price': 25, 'unit': 'Pkt'},
-    {'code': 'p11', 'name': 'DTM 900gm', 'price': 50, 'unit': 'Kg'},
-    {'code': 'p12', 'name': 'Skim 10kg', 'price': 450, 'unit': 'bkt'},
-    {'code': 'p13', 'name': 'DTM 10kg', 'price': 500, 'unit': 'bkt'},
-    {'code': 'p14', 'name': 'TM 10kg', 'price': 300, 'unit': 'bkt'},
-    {'code': 'p15', 'name': '5kg BKT', 'price': 300, 'unit': 'bkt'},
-    {'code': 'p16', 'name': 'Paneer 1kg', 'price': 350, 'unit': 'pkt'},
-    {'code': 'p17', 'name': 'Paneer 500gm', 'price': 300, 'unit': 'pkt'},
-    {'code': 'p18', 'name': '20kg can', 'price': 300, 'unit': 'bkt'},
-    {'code': 'p19', 'name': 'COWA 500gm', 'price': 300, 'unit': 'kg'},
-    {'code': 'p20', 'name': 'Cowa 1kg', 'price': 300, 'unit': 'kg'},
-    {'code': 'p21', 'name': 'Badam Milk', 'price': 300, 'unit': 'pkt'},
-    {'code': 'p24', 'name': 'Butter', 'price': 500, 'unit': 'Kg'},
-    {'code': 'p25', 'name': 'Ghee', 'price': 600, 'unit': 'Kg'},
-]
 
 # --- MULTI-TENANT MODELS ---
 
@@ -118,7 +93,6 @@ class CustomerRate(db.Model):
     product_id = db.Column(db.String(50), nullable=False)
     rate = db.Column(db.Float, nullable=False)
 
-# UPDATED ORDER MODEL: Stores items as JSON Text instead of child rows
 class Order(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     tenant_id = db.Column(db.String(50), db.ForeignKey('dairy_tenant.id'), nullable=False)
@@ -127,22 +101,20 @@ class Order(db.Model):
     date = db.Column(db.String(20), nullable=False) 
     status = db.Column(db.String(20)) 
     total = db.Column(db.Float, default=0.0)
-    items_json = db.Column(db.Text, default='[]') # Stores list of items as a JSON string
+    items_json = db.Column(db.Text, default='[]') 
 
     def to_dict(self):
-        # Convert JSON string back to list of objects for frontend
         items_list = []
         if self.items_json:
             try:
                 items_list = json.loads(self.items_json)
             except:
                 items_list = []
-                
-        # Compatibility mapping for frontend
+        
         formatted_items = []
         for i in items_list:
             formatted_items.append({
-                "id": i.get('productId') or i.get('id'), # Handle legacy structure if any
+                "id": i.get('productId') or i.get('id'),
                 "name": i.get('name'),
                 "quantity": i.get('quantity'),
                 "price": i.get('price')
@@ -186,13 +158,6 @@ class Expense(db.Model):
 
 # --- HELPERS & MIDDLEWARE ---
 
-def generate_tenant_id(location_name):
-    codes = {"Warangal": "WL", "Hyderabad": "HYD", "Karimnagar": "KR"}
-    code = codes.get(location_name, location_name[:3].upper())
-    last_tenant = DairyTenant.query.filter_by(location_code=code).order_by(DairyTenant.location_seq.desc()).first()
-    seq = (last_tenant.location_seq + 1) if last_tenant else 1
-    return f"{code}{seq:02d}", code, seq
-
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -224,34 +189,13 @@ def home_explicit():
 def reports_page():
     return send_file('reports.html')
 
-# --- DB MAINTENANCE ---
-@app.route('/api/debug/reset_db', methods=['GET'])
-def reset_db():
-    try:
-        # Force close any active sessions to release locks (crucial for SQLite)
-        db.session.remove()
-        
-        # Use a fresh metadata object to reflect ALL tables currently in the DB
-        # This ensures we drop tables like 'order_item' even if the class was deleted from code
-        meta = db.MetaData()
-        meta.reflect(bind=db.engine)
-        meta.drop_all(bind=db.engine)
-        
-        # Create tables based on the current Code Models
-        db.create_all()
-        
-        return jsonify({"message": "Database reset successfully. New optimized schema applied."})
-    except Exception as e:
-        print(f"RESET DB ERROR: {e}") # Log error to terminal for debugging
-        return jsonify({"error": str(e)}), 500
+# --- AUTHENTICATION ---
 
-# --- 1. LOGIN ---
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     user = DairyUser.query.filter_by(username=data.get('username')).first()
     
-    # Simple password check (Note: For strict production, consider hashing passwords with bcrypt)
     if user and user.password == data.get('password'):
         token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
         tenant = DairyTenant.query.get(user.tenant_id)
@@ -283,7 +227,7 @@ def sync_data():
             "payments": recent_payments, "expenses": expenses, "orders": recent_orders
         })
     except OperationalError:
-        return jsonify({"error": "Database schema mismatch. Please use 'Reset Database' on login screen."}), 500
+        return jsonify({"error": "Database error."}), 500
 
 # --- CORE API ROUTES ---
 
@@ -331,29 +275,24 @@ def update_rates(cid):
     for pid, rate in rates_map.items():
         db.session.add(CustomerRate(tenant_id=tid, customer_id=cid, product_id=pid, rate=rate))
     
-    # Handle Live Update of Drafts with New Rate Structure
     updated_draft = False
     if scope == 'today':
         today = datetime.now().strftime('%Y-%m-%d')
         draft_order = Order.query.filter_by(customer_id=cid, date=today, status='draft', tenant_id=tid).first()
         if draft_order:
-            # Parse existing items
             items = []
             if draft_order.items_json:
                 items = json.loads(draft_order.items_json)
             
             new_total = 0
             for item in items:
-                # Get Product ID (handle both structures if necessary)
                 pid = item.get('productId') or item.get('id')
-                
                 prod = Product.query.filter_by(id=pid, tenant_id=tid).first()
                 if prod:
                     new_rate = rates_map.get(prod.id, prod.price)
                     item['price'] = new_rate
                     new_total += item['quantity'] * new_rate
             
-            # Save back to JSON
             draft_order.items_json = json.dumps(items)
             draft_order.total = new_total
             updated_draft = True
@@ -407,28 +346,25 @@ def save_orders():
 
         existing = Order.query.filter_by(customer_id=customer_id, date=date_str, tenant_id=tid).first()
         
-        # Reverse existing total from dues if finalized
         if existing and existing.status == 'finalized':
             cust.dues -= existing.total
         
-        # Serialize items to JSON
         items_json_str = json.dumps(ord_data['items'])
 
         if existing:
             existing.total = ord_data['total']
             existing.status = ord_data['status']
             existing.customer_name = ord_data['customerName']
-            existing.items_json = items_json_str # Update JSON block
+            existing.items_json = items_json_str 
         else:
             new_order = Order(
                 id=ord_data['id'], tenant_id=tid, customer_id=customer_id, 
                 customer_name=ord_data['customerName'], date=date_str, 
                 status=ord_data['status'], total=ord_data['total'],
-                items_json=items_json_str # Save JSON block
+                items_json=items_json_str 
             )
             db.session.add(new_order)
         
-        # Add new total to dues if finalized
         if ord_data['status'] == 'finalized':
             cust.dues += ord_data['total']
         count += 1
@@ -579,7 +515,6 @@ def mod_product(id):
     if not prod: return jsonify({"error": "Not found"}), 404
     
     if request.method == 'DELETE': 
-        # SOFT DELETE: Just mark as inactive to preserve history
         prod.is_active = False
     elif request.method == 'PUT': 
         prod.price = request.json['price']
@@ -590,5 +525,5 @@ def mod_product(id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    # CHANGE: Debug must be False for production
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    # PRODUCTION SETTING: Debug is now False
+    app.run(debug=False, port=5000)
