@@ -36,25 +36,18 @@
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
         .btn-hover { transition: all 0.2s; }
         .btn-hover:hover { transform: translateY(-1px); filter: brightness(105%); }
         .btn-hover:active { transform: translateY(0); }
-        
         .row-hover:hover { background-color: #f8fafc; transform: scale-[1.002]; transition: all 0.2s; z-index: 10; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
-
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
         .thick-lines table, .thick-lines th, .thick-lines td { border: 2px solid #94a3b8 !important; }
         .thick-lines input { font-weight: 800 !important; color: #1e293b !important; }
-
         @media print {
             @page { size: landscape; margin: 5mm; }
             .no-print, #sidebar, #loginScreen, #mobileHeader, #toast-container, #dashboard, #customers, #billing, #expenses, #settings, #sidebarOverlay, #confirmModal, button, .chart-btn { display: none !important; }
@@ -92,36 +85,72 @@
         </div>
     </div>
 
+    <!-- Login/Register Screen -->
     <div id="loginScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-10 text-center fade-in relative overflow-hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center fade-in relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-            <div class="mb-8">
-                <div class="h-20 w-20 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-4xl mx-auto mb-6 shadow-lg shadow-brand-200 rotate-3 hover:rotate-6 transition"><i class="fas fa-cow"></i></div>
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Dairy Manager <span class="text-brand-600">Pro</span></h1>
-                <p class="text-slate-400 mt-2">Sign in to manage your operations</p>
+            
+            <div class="mb-6">
+                <div class="h-16 w-16 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-3xl mx-auto mb-4 shadow-lg shadow-brand-200 rotate-3"><i class="fas fa-cow"></i></div>
+                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dairy Manager <span class="text-brand-600">Pro</span></h1>
+                
+                <!-- Toggle Tabs -->
+                <div class="flex justify-center gap-4 mt-6 border-b border-slate-100 pb-1">
+                    <button onclick="auth.toggleMode('login')" id="tabLogin" class="text-sm font-bold text-brand-600 border-b-2 border-brand-600 pb-2 px-4 transition">Login</button>
+                    <button onclick="auth.toggleMode('register')" id="tabRegister" class="text-sm font-bold text-slate-400 pb-2 px-4 hover:text-slate-600 transition">Register New Dairy</button>
+                </div>
             </div>
-            <form onsubmit="auth.login(event)" class="space-y-5 text-left">
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="auth.login(event)" class="space-y-4 text-left">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Username</label>
-                    <div class="relative"><i class="fas fa-user absolute left-4 top-3.5 text-slate-400"></i><input type="text" id="username" class="w-full border border-slate-200 rounded-xl py-3 pl-11 pr-4 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="admin" value="admin"></div>
+                    <div class="relative"><i class="fas fa-user absolute left-4 top-3.5 text-slate-400"></i><input type="text" id="username" class="w-full border border-slate-200 rounded-xl py-3 pl-11 pr-4 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="admin"></div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Password</label>
-                    <div class="relative"><i class="fas fa-lock absolute left-4 top-3.5 text-slate-400"></i><input type="password" id="password" class="w-full border border-slate-200 rounded-xl py-3 pl-11 pr-4 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="••••••" value="password"></div>
+                    <div class="relative"><i class="fas fa-lock absolute left-4 top-3.5 text-slate-400"></i><input type="password" id="password" class="w-full border border-slate-200 rounded-xl py-3 pl-11 pr-4 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="••••••"></div>
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-200 btn-hover mt-2">Sign In</button>
             </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="auth.register(event)" class="space-y-4 text-left hidden">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Dairy Name</label>
+                        <input type="text" id="regName" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition text-sm" placeholder="e.g. Laxmi Dairy" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Location</label>
+                        <input type="text" id="regLoc" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition text-sm" placeholder="e.g. Warangal" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Username</label>
+                    <input type="text" id="regUser" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="Username" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="regPass" class="w-full border border-slate-200 rounded-xl py-3 px-3 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition" placeholder="Password" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-green-200 btn-hover mt-2">Create Account</button>
+            </form>
+
+            <button onclick="auth.resetDb()" class="mt-6 text-xs text-red-300 hover:text-red-500 underline">Reset Database (Dev Only)</button>
         </div>
     </div>
 
+    <!-- Mobile Header -->
     <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
         <div class="flex items-center gap-3"><div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white text-sm shadow-md"><i class="fas fa-cow"></i></div><span class="font-bold text-lg tracking-wide">Dairy<span class="text-brand-400">Pro</span></span></div>
         <button onclick="app.toggleSidebar()" class="text-white focus:outline-none p-2 rounded hover:bg-slate-800 transition"><i class="fas fa-bars text-xl"></i></button>
     </div>
 
+    <!-- Sidebar -->
     <aside class="fixed md:relative inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none whitespace-nowrap overflow-hidden" id="sidebar">
         <div class="p-6 flex justify-between items-center h-20 border-b border-slate-800/50">
-            <div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand-900 flex-shrink-0"><i class="fas fa-cow"></i></div><div class="flex flex-col sidebar-text"><span class="font-bold text-lg text-white tracking-wide leading-tight">DairyMgr</span><span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Professional</span></div></div>
+            <div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand-900 flex-shrink-0"><i class="fas fa-cow"></i></div><div class="flex flex-col sidebar-text"><span class="font-bold text-lg text-white tracking-wide leading-tight" id="sidebarBrandName">DairyMgr</span><span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Professional</span></div></div>
             <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
              <button onclick="app.toggleSidebarDesktop()" class="hidden md:block text-slate-500 hover:text-white focus:outline-none transition" title="Toggle Menu"><i class="fas fa-chevron-left transition-transform duration-300" id="collapseIcon"></i></button>
         </div>
@@ -133,7 +162,9 @@
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">Finance</p>
             <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="billing"><i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span></button>
             <button onclick="router.navigate('expenses')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="expenses"><i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span></button>
+            
             <a href="reports.html" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group"><i class="fas fa-chart-pie w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Reports</span></a>
+            
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">System</p>
             <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="settings"><i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span></button>
         </nav>
@@ -149,7 +180,7 @@
         <section id="dashboard" class="view-section fade-in">
             <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
                 <div>
-                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Dashboard</h2>
+                    <h2 class="text-3xl font-bold text-slate-800 tracking-tight" id="dashboardShopTitle">Dashboard</h2>
                     <p class="text-sm text-slate-500 mt-1">Overview for <span id="dashDateLabel" class="font-bold text-slate-700"></span> <span id="todayBadge" class="hidden ml-2 bg-brand-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm tracking-wide">TODAY</span></p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -358,7 +389,7 @@
         </section>
     </main>
 
-    <!-- CUSTOMER MODAL -->
+    <!-- Modals (Customer, Rate, Employee) remain same as before -->
     <div id="customerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 fade-in">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
             <div class="p-6 border-b bg-slate-50 flex-shrink-0 flex justify-between items-center rounded-t-2xl"><h3 class="font-bold text-lg text-slate-800" id="modalTitle">Add Customer</h3><button onclick="customerManager.closeModal()" class="text-slate-400 hover:text-red-500 transition text-lg"><i class="fas fa-times"></i></button></div>
@@ -408,18 +439,151 @@
     </div>
 
     <script>
-        // --- PHASE 1 CONFIGURATION ---
-        // Dynamically determining API_BASE allows this to work on Localhost AND Render/Heroku without changes.
-        // If you are hosting Frontend separately (e.g. Netlify) and Backend on Render, replace this with:
-         const API_BASE = "https://dairy-manager.onrender.com/";
+        // --- FIXED API URL (REMOVED TRAILING SLASH) ---
+        const API_BASE = "http://127.0.0.1:5000";
 
         const showToast = (msg, type='success') => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800'; const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'; toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[320px] pointer-events-auto backdrop-blur-md bg-opacity-95`; toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000); };
         const ui = { confirmCallback: null, showConfirm(title, msg, callback) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmMsg').innerText = msg; this.confirmCallback = callback; document.getElementById('confirmModal').classList.remove('hidden'); document.getElementById('confirmYesBtn').focus(); }, closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); this.confirmCallback = null; }, triggerConfirm() { if(this.confirmCallback) this.confirmCallback(); this.closeConfirm(); } }; document.getElementById('confirmYesBtn').onclick = () => ui.triggerConfirm();
-        const api = { async get(endpoint) { try { const res = await fetch(`${API_BASE}${endpoint}`); return await res.json(); } catch (e) { showToast('Connection Error', 'error'); return null; } }, async post(endpoint, body) { try { const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); const data = await res.json(); if(data.error) throw new Error(data.error); return data; } catch (e) { showToast(e.message, 'error'); return null; } }, async put(endpoint, body) { try { const res = await fetch(`${API_BASE}${endpoint}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); const data = await res.json(); if(data.error) throw new Error(data.error); return data; } catch (e) { showToast(e.message, 'error'); return null; } }, async del(endpoint) { try { const res = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE' }); return await res.json(); } catch (e) { showToast('Connection Error', 'error'); } } };
+        
+        const api = {
+            getHeaders() {
+                const token = localStorage.getItem('dm_token');
+                return token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' };
+            },
+            async get(endpoint) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, { headers: this.getHeaders() });
+                    if (res.status === 401) { auth.logout(); return null; }
+                    return await res.json();
+                } catch (e) { showToast('Connection Error', 'error'); return null; }
+            },
+            async post(endpoint, body) {
+                try {
+                    const headers = (endpoint === '/api/login' || endpoint === '/api/register') ? { 'Content-Type': 'application/json' } : this.getHeaders();
+                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+                    if (res.status === 401 && endpoint !== '/api/login') { auth.logout(); return null; }
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    return data;
+                } catch (e) { showToast(e.message, 'error'); return null; }
+            },
+            async put(endpoint, body) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'PUT', headers: this.getHeaders(), body: JSON.stringify(body) });
+                    if (res.status === 401) { auth.logout(); return null; }
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    return data;
+                } catch (e) { showToast(e.message, 'error'); return null; }
+            },
+            async del(endpoint) {
+                try {
+                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE', headers: this.getHeaders() });
+                    if (res.status === 401) { auth.logout(); return null; }
+                    return await res.json();
+                } catch (e) { showToast('Connection Error', 'error'); }
+            }
+        };
+
         const store = { data: { customers: [], products: [], expenseCategories: ['Operational', 'Purchase', 'Maintenance', 'Salary', 'Advance'], employees: [], orders: [], payments: [], expenses: [] }, async sync() { const data = await api.get('/api/sync'); if (data) { this.data.customers = data.customers || []; this.data.products = data.products || []; this.data.employees = data.employees || []; this.data.payments = data.payments || []; this.data.expenses = data.expenses || []; this.data.orders = data.orders || []; } } };
         const chartManager = { mode: 'week', chart: null, setMode(mode) { this.mode = mode; document.querySelectorAll('.chart-btn').forEach(b => { b.classList.remove('bg-white', 'shadow-sm', 'text-slate-800'); b.classList.add('text-slate-500'); }); document.getElementById(`btn-${mode}`).classList.add('bg-white', 'shadow-sm', 'text-slate-800'); document.getElementById(`btn-${mode}`).classList.remove('text-slate-500'); this.render(document.getElementById('dashboardDate').value); }, render(selectedDateStr) { const ctx = document.getElementById('salesChart'); if(!ctx) return; const selectedDate = new Date(selectedDateStr); const labels = [], dataPoints = []; let daysToFetch = this.mode === 'week' ? 7 : 30; let dateFormat = this.mode === 'week' ? {weekday:'short'} : {day:'numeric', month:'short'}; for(let i=daysToFetch-1; i>=0; i--) { const d = new Date(selectedDate); d.setDate(d.getDate() - i); const dateStr = d.toISOString().split('T')[0]; labels.push(d.toLocaleDateString('en-IN', dateFormat)); const dailyTotal = store.data.orders.filter(o => o.date === dateStr).reduce((sum, o) => sum + o.total, 0); dataPoints.push(dailyTotal); } if(this.chart) this.chart.destroy(); this.chart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'Sales (₹)', data: dataPoints, backgroundColor: '#2563eb', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display:false } }, x: { grid: { display: false } } } } }); } };
-        const auth = { async login(e) { e.preventDefault(); const u = document.getElementById('username').value; const p = document.getElementById('password').value; const res = await api.post('/api/login', {username: u, password: p}); if(res && res.token) { document.getElementById('loginScreen').classList.add('hidden'); app.init(); } }, logout() { location.reload(); } };
-        const app = { async init() { await store.sync(); const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; document.getElementById('orderDate').value = today; document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = today; }); await this.fetchOrdersForDate(today); this.renderDashboard(); router.navigate('dashboard'); }, toggleSidebarDesktop() { const sidebar = document.getElementById('sidebar'); const textElements = sidebar.querySelectorAll('.sidebar-text'); const icon = document.getElementById('collapseIcon'); sidebar.classList.toggle('w-72'); sidebar.classList.toggle('w-20'); textElements.forEach(el => el.classList.toggle('hidden')); icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)'; }, toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }, async changeDate(days) { const input = document.getElementById('dashboardDate'); const current = new Date(input.value); current.setDate(current.getDate() + days); input.value = current.toISOString().split('T')[0]; await this.fetchOrdersForDate(input.value); this.renderDashboard(); }, async setDateYesterday() { const input = document.getElementById('dashboardDate'); const y = new Date(); y.setDate(y.getDate() - 1); input.value = y.toISOString().split('T')[0]; await this.fetchOrdersForDate(input.value); this.renderDashboard(); }, async fetchOrdersForDate(date) { const orders = await api.get(`/api/orders?date=${date}`); if (orders) { store.data.orders = store.data.orders.filter(o => o.date !== date); store.data.orders.push(...orders); } }, async fetchDashData() { const date = document.getElementById('dashboardDate').value; return await api.get(`/api/dashboard?date=${date}`); }, async renderDashboard() { const dateStr = document.getElementById('dashboardDate').value; const isToday = dateStr === new Date().toISOString().split('T')[0]; document.getElementById('dashDateLabel').innerText = new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); document.getElementById('todayBadge').classList.toggle('hidden', !isToday); document.getElementById('btnBackToday').classList.toggle('hidden', isToday); const stats = await this.fetchDashData(); if(!stats) return; document.getElementById('dash-revenue-today').innerText = '₹' + stats.revenue_finalized.toLocaleString(); const pctEl = document.getElementById('salesPct'); const pctVal = stats.revenue_pct_change || 0; pctEl.innerText = (pctVal >= 0 ? '+' : '') + pctVal + '%'; pctEl.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${pctVal >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`; document.getElementById('dash-dues-prev').innerText = '₹' + stats.opening_balance.toLocaleString(); document.getElementById('dash-dues-total').innerText = '₹' + stats.total_dues.toLocaleString(); document.getElementById('dash-active-customers').innerText = stats.active_customers; chartManager.render(dateStr); const highDuesList = document.getElementById('highDuesList'); highDuesList.innerHTML = ''; const defaulters = store.data.customers.filter(c => c.dues > 0).sort((a,b) => b.dues - a.dues).slice(0, 10); if(defaulters.length === 0) highDuesList.innerHTML = '<div class="text-center text-green-600 p-4 font-bold bg-green-50 rounded-xl">No pending dues!</div>'; else { highDuesList.innerHTML = '<ul class="space-y-3">'; defaulters.forEach(c => { highDuesList.innerHTML += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 hover:bg-slate-100 transition"><div class="flex items-center gap-3"><div class="h-9 w-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shadow-sm">${c.name.charAt(0)}</div><span class="font-bold text-slate-700 text-sm">${c.name}</span></div><span class="font-bold text-red-600 text-sm">₹${c.dues.toLocaleString()}</span></li>`; }); highDuesList.innerHTML += '</ul>'; } }, goToToday() { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; this.renderDashboard(); } };
+        
+        const auth = { 
+            toggleMode(mode) {
+                if(mode === 'login') {
+                    document.getElementById('loginForm').classList.remove('hidden');
+                    document.getElementById('registerForm').classList.add('hidden');
+                    document.getElementById('tabLogin').classList.add('border-brand-600', 'text-brand-600');
+                    document.getElementById('tabLogin').classList.remove('text-slate-400');
+                    document.getElementById('tabRegister').classList.remove('border-brand-600', 'text-brand-600');
+                    document.getElementById('tabRegister').classList.add('text-slate-400');
+                } else {
+                    document.getElementById('loginForm').classList.add('hidden');
+                    document.getElementById('registerForm').classList.remove('hidden');
+                    document.getElementById('tabRegister').classList.add('border-brand-600', 'text-brand-600');
+                    document.getElementById('tabRegister').classList.remove('text-slate-400');
+                    document.getElementById('tabLogin').classList.remove('border-brand-600', 'text-brand-600');
+                    document.getElementById('tabLogin').classList.add('text-slate-400');
+                }
+            },
+            async login(e) { 
+                e.preventDefault(); 
+                const u = document.getElementById('username').value; 
+                const p = document.getElementById('password').value; 
+                const res = await api.post('/api/login', {username: u, password: p}); 
+                if(res && res.token) { 
+                    localStorage.setItem('dm_token', res.token);
+                    localStorage.setItem('dm_tenant', res.tenant_id);
+                    localStorage.setItem('dm_business_name', res.business_name); // Store Shop Name
+                    document.getElementById('loginScreen').classList.add('hidden'); 
+                    app.init(); 
+                } 
+            }, 
+            async register(e) {
+                e.preventDefault();
+                const body = {
+                    business_name: document.getElementById('regName').value,
+                    location: document.getElementById('regLoc').value,
+                    username: document.getElementById('regUser').value,
+                    password: document.getElementById('regPass').value
+                };
+                const res = await api.post('/api/register', body);
+                if(res && res.token) {
+                    showToast("Welcome! Setting up your dairy...", "success");
+                    localStorage.setItem('dm_token', res.token);
+                    localStorage.setItem('dm_tenant', res.tenant_id);
+                    localStorage.setItem('dm_business_name', res.business_name);
+                    setTimeout(() => {
+                        document.getElementById('loginScreen').classList.add('hidden'); 
+                        app.init();
+                    }, 1000);
+                }
+            },
+            async resetDb() {
+                if(confirm("DANGER: This will delete ALL data for ALL users. Only do this if you are stuck with schema errors. Continue?")) {
+                    const res = await api.get('/api/debug/reset_db');
+                    if(res) alert(res.message);
+                }
+            },
+            logout() { 
+                localStorage.removeItem('dm_token');
+                localStorage.removeItem('dm_tenant');
+                localStorage.removeItem('dm_business_name');
+                location.reload(); 
+            },
+            check() {
+                if(localStorage.getItem('dm_token')) {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    app.init();
+                }
+            }
+        };
+
+        const app = { 
+            async init() { 
+                // Display Shop Name in Dashboard Title and Sidebar
+                const shopName = localStorage.getItem('dm_business_name') || 'Dashboard';
+                document.getElementById('dashboardShopTitle').innerText = shopName;
+                document.getElementById('sidebarBrandName').innerText = shopName;
+
+                await store.sync(); 
+                const today = new Date().toISOString().split('T')[0]; 
+                document.getElementById('dashboardDate').value = today; 
+                document.getElementById('orderDate').value = today; 
+                document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = today; }); 
+                await this.fetchOrdersForDate(today); 
+                this.renderDashboard(); 
+                router.navigate('dashboard'); 
+            }, 
+            toggleSidebarDesktop() { const sidebar = document.getElementById('sidebar'); const textElements = sidebar.querySelectorAll('.sidebar-text'); const icon = document.getElementById('collapseIcon'); sidebar.classList.toggle('w-72'); sidebar.classList.toggle('w-20'); textElements.forEach(el => el.classList.toggle('hidden')); icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)'; }, 
+            toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }, 
+            async changeDate(days) { const input = document.getElementById('dashboardDate'); const current = new Date(input.value); current.setDate(current.getDate() + days); input.value = current.toISOString().split('T')[0]; await this.fetchOrdersForDate(input.value); this.renderDashboard(); }, 
+            async setDateYesterday() { const input = document.getElementById('dashboardDate'); const y = new Date(); y.setDate(y.getDate() - 1); input.value = y.toISOString().split('T')[0]; await this.fetchOrdersForDate(input.value); this.renderDashboard(); }, 
+            async fetchOrdersForDate(date) { const orders = await api.get(`/api/orders?date=${date}`); if (orders) { store.data.orders = store.data.orders.filter(o => o.date !== date); store.data.orders.push(...orders); } }, 
+            async fetchDashData() { const date = document.getElementById('dashboardDate').value; return await api.get(`/api/dashboard?date=${date}`); }, 
+            async renderDashboard() { const dateStr = document.getElementById('dashboardDate').value; const isToday = dateStr === new Date().toISOString().split('T')[0]; document.getElementById('dashDateLabel').innerText = new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); document.getElementById('todayBadge').classList.toggle('hidden', !isToday); document.getElementById('btnBackToday').classList.toggle('hidden', isToday); const stats = await this.fetchDashData(); if(!stats) return; document.getElementById('dash-revenue-today').innerText = '₹' + stats.revenue_finalized.toLocaleString(); const pctEl = document.getElementById('salesPct'); const pctVal = stats.revenue_pct_change || 0; pctEl.innerText = (pctVal >= 0 ? '+' : '') + pctVal + '%'; pctEl.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${pctVal >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`; document.getElementById('dash-dues-prev').innerText = '₹' + stats.opening_balance.toLocaleString(); document.getElementById('dash-dues-total').innerText = '₹' + stats.total_dues.toLocaleString(); document.getElementById('dash-active-customers').innerText = stats.active_customers; chartManager.render(dateStr); const highDuesList = document.getElementById('highDuesList'); highDuesList.innerHTML = ''; const defaulters = store.data.customers.filter(c => c.dues > 0).sort((a,b) => b.dues - a.dues).slice(0, 10); if(defaulters.length === 0) highDuesList.innerHTML = '<div class="text-center text-green-600 p-4 font-bold bg-green-50 rounded-xl">No pending dues!</div>'; else { highDuesList.innerHTML = '<ul class="space-y-3">'; defaulters.forEach(c => { highDuesList.innerHTML += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 hover:bg-slate-100 transition"><div class="flex items-center gap-3"><div class="h-9 w-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shadow-sm">${c.name.charAt(0)}</div><span class="font-bold text-slate-700 text-sm">${c.name}</span></div><span class="font-bold text-red-600 text-sm">₹${c.dues.toLocaleString()}</span></li>`; }); highDuesList.innerHTML += '</ul>'; } }, 
+            goToToday() { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; this.renderDashboard(); } 
+        };
         const router = { navigate(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); const target = document.getElementById(viewId); if(target) { target.classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(el => { const active = el.dataset.target === viewId; if(el.tagName === 'BUTTON') { el.classList.toggle('bg-slate-800', active); el.classList.toggle('text-white', active); el.classList.toggle('shadow-lg', active); } }); if(viewId === 'dashboard') { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; app.renderDashboard(); } if(viewId === 'customers') customerManager.renderList(); if(viewId === 'orders') orderManager.render(); if(viewId === 'billing') billingManager.init(); if(viewId === 'settings') settingsManager.render(); if(viewId === 'expenses') expenseManager.render(); if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); } } } };
 
         const customerManager = {
@@ -435,39 +599,65 @@
         };
 
         const orderManager = {
-            isLocked: true,
+            isLocked: false,
+            // Stores visible columns for the current view
+            currentVisibleProducts: [], 
             async render() {
                 const dateInput = document.getElementById('orderDate').value;
                 const selectedDate = new Date(dateInput);
                 const today = new Date(); today.setHours(0,0,0,0); selectedDate.setHours(0,0,0,0);
-                this.isLocked = selectedDate < today; 
+                
                 document.getElementById('printDate').innerText = selectedDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
                 document.getElementById('orderListDate').innerText = `For: ${selectedDate.toLocaleDateString()}`;
                 
                 await app.fetchOrdersForDate(dateInput); 
-                const isFinalized = store.data.customers.some(c => { const o = store.data.orders.find(ord => ord.customerId === c.id && ord.date === dateInput); return o && o.status === 'finalized'; });
-                if(isFinalized) this.isLocked = true;
-
+                
+                // Logic: Sheet is Locked ONLY if status is 'finalized'. 
+                // Unlocked by default for past, present, and future until finalized.
+                const isFinalized = store.data.customers.some(c => { 
+                    const o = store.data.orders.find(ord => ord.customerId === c.id && ord.date === dateInput); 
+                    return o && o.status === 'finalized'; 
+                });
+                
+                this.isLocked = isFinalized; 
                 this.updateLockUI();
 
+                // SMART COLUMNS LOGIC:
+                // Show product IF: 
+                // 1. Product is Active (isActive !== false)
+                // 2. OR Product is Inactive BUT has quantities > 0 for ANY customer on THIS date (Historical View)
+                this.currentVisibleProducts = store.data.products.filter(p => {
+                    if (p.isActive !== false) return true; // Active products always shown
+                    // For inactive products, check if they are used in this day's orders
+                    const isUsed = store.data.customers.some(c => {
+                        const order = store.data.orders.find(o => o.customerId === c.id && o.date === dateInput);
+                        if (!order || !order.items) return false;
+                        const item = order.items.find(i => i.id === p.id || i.name === p.name);
+                        return item && item.quantity > 0;
+                    });
+                    return isUsed;
+                });
+
                 const h = document.getElementById('routeHeaderRow');
-                h.innerHTML = '<th class="p-3 w-32 sticky left-0 bg-slate-50 z-10 text-left border-r border-slate-200 shadow-sm">Customer</th>' + store.data.products.map(p => `<th class="p-2 w-16 text-center text-xs font-bold break-words leading-tight border-r border-slate-100">${p.name}</th>`).join('') + '<th class="p-4 text-center no-print">Status</th>';
+                h.innerHTML = '<th class="p-3 w-32 sticky left-0 bg-slate-50 z-10 text-left border-r border-slate-200 shadow-sm">Customer</th>' + 
+                              this.currentVisibleProducts.map(p => `<th class="p-2 w-16 text-center text-xs font-bold break-words leading-tight border-r border-slate-100">${p.name}</th>`).join('') + 
+                              '<th class="p-4 text-center no-print">Status</th>';
+                
                 const tbody = document.getElementById('orderTableBody'); tbody.innerHTML = '';
                 
                 store.data.customers.forEach((c, cIdx) => {
                     const order = store.data.orders.find(o => o.customerId === c.id && o.date === dateInput);
-                    // Match items using Product ID if available, else name fallback
-                    const inputs = store.data.products.map((p, pIdx) => {
+                    // Generate inputs only for visible products
+                    const inputs = this.currentVisibleProducts.map((p, pIdx) => {
                          let qty = '';
                          if(order && order.items) {
-                             // Try matching by ID first (Robust)
                              let item = order.items.find(i => i.id === p.id);
-                             // Fallback to Name (Legacy support)
-                             if(!item) item = order.items.find(i => i.name === p.name);
+                             if(!item) item = order.items.find(i => i.name === p.name); // Legacy Fallback
                              if(item) qty = item.quantity;
                          }
                          return `<td class="p-0 border-r border-slate-50"><input type="number" id="ord_${c.id}_${p.id}" ${this.isLocked ? 'disabled' : ''} min="0" value="${qty}" class="w-full border-0 border-b-2 border-transparent hover:border-slate-200 focus:border-brand-500 rounded-none text-center py-2 bg-transparent focus:bg-brand-50 quantity-input text-sm font-bold h-10 transition-colors ${this.isLocked ? 'text-slate-400 cursor-not-allowed' : ''}" data-pid="${p.id}" data-row="${cIdx}" data-col="${pIdx}" oninput="orderManager.updateTotals()" onkeydown="orderManager.handleKeyNav(event, this)"></td>`
                     }).join('');
+                    
                     const status = order ? (order.status === 'finalized' ? `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Finalized</span>` : `<span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Draft</span>`) : `<span class="text-xs text-slate-400">Pending</span>`;
                     tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-3 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]"><div class="font-bold text-slate-700 text-sm whitespace-nowrap">${c.name}</div></td>${inputs}<td class="p-4 text-center w-24 no-print" id="status_${c.id}">${status}</td></tr>`;
                 });
@@ -487,14 +677,15 @@
                 });
             },
             handleKeyNav(e, el) {
-                if(e.key.startsWith('Arrow')) { e.preventDefault(); const currentRow = parseInt(el.dataset.row); const currentCol = parseInt(el.dataset.col); const totalRows = store.data.customers.length; const totalCols = store.data.products.length; let targetRow = currentRow, targetCol = currentCol; if(e.key === 'ArrowUp') targetRow = Math.max(0, currentRow - 1); if(e.key === 'ArrowDown') targetRow = Math.min(totalRows - 1, currentRow + 1); if(e.key === 'ArrowLeft') targetCol = Math.max(0, currentCol - 1); if(e.key === 'ArrowRight') targetCol = Math.min(totalCols - 1, currentCol + 1); const targetEl = document.querySelector(`.quantity-input[data-row="${targetRow}"][data-col="${targetCol}"]`); if(targetEl) { targetEl.focus(); targetEl.select(); } }
+                if(e.key.startsWith('Arrow')) { e.preventDefault(); const currentRow = parseInt(el.dataset.row); const currentCol = parseInt(el.dataset.col); const totalRows = store.data.customers.length; const totalCols = this.currentVisibleProducts.length; let targetRow = currentRow, targetCol = currentCol; if(e.key === 'ArrowUp') targetRow = Math.max(0, currentRow - 1); if(e.key === 'ArrowDown') targetRow = Math.min(totalRows - 1, currentRow + 1); if(e.key === 'ArrowLeft') targetCol = Math.max(0, currentCol - 1); if(e.key === 'ArrowRight') targetCol = Math.min(totalCols - 1, currentCol + 1); const targetEl = document.querySelector(`.quantity-input[data-row="${targetRow}"][data-col="${targetCol}"]`); if(targetEl) { targetEl.focus(); targetEl.select(); } }
             },
             async changeDate(days) { const input = document.getElementById('orderDate'); const current = new Date(input.value); current.setDate(current.getDate() + days); input.value = current.toISOString().split('T')[0]; this.render(); },
             updateTotals() {
-                const totals = {}; store.data.products.forEach(p => totals[p.id] = 0);
+                // Only calculate totals for visible products
+                const totals = {}; this.currentVisibleProducts.forEach(p => totals[p.id] = 0);
                 document.querySelectorAll('.quantity-input').forEach(input => { const pid = input.dataset.pid; if(totals[pid] !== undefined) totals[pid] += (parseInt(input.value) || 0); });
                 let footerHtml = '<tr class="bg-slate-100 font-bold sticky bottom-0 z-20"><td class="p-3 text-right sticky left-0 bg-slate-100 border-r border-slate-200">Total:</td>';
-                store.data.products.forEach(p => footerHtml += `<td class="p-2 text-center text-brand-600 text-sm border-r border-slate-200">${totals[p.id]}</td>`);
+                this.currentVisibleProducts.forEach(p => footerHtml += `<td class="p-2 text-center text-brand-600 text-sm border-r border-slate-200">${totals[p.id]}</td>`);
                 document.getElementById('orderTableFooter').innerHTML = footerHtml + '<td class="no-print"></td></tr>';
             },
             async fillYesterday() {
@@ -503,22 +694,23 @@
                 this.updateTotals(); showToast("Filled from history");
             },
             async saveDraft() { await this.submitOrders('draft'); },
-            async finalizeDay() { ui.showConfirm('Finalize Orders?', 'This will update customer ledgers. You can unlock later if needed.', async () => await this.submitOrders('finalized')); },
+            async finalizeDay() { ui.showConfirm('Finalize Orders?', 'This will update customer ledgers and lock the sheet.', async () => await this.submitOrders('finalized')); },
             async submitOrders(status) {
                 const date = document.getElementById('orderDate').value;
                 const ordersToSave = [];
                 store.data.customers.forEach(c => {
                     const items = []; let total = 0;
-                    store.data.products.forEach(p => { 
-                        const q = parseInt(document.getElementById(`ord_${c.id}_${p.id}`)?.value || 0); 
+                    // Iterate through VISIBLE products to save what's on screen. 
+                    // Note: If a product is hidden (deleted + no historical data), it won't be saved here, which is correct (removes the record).
+                    this.currentVisibleProducts.forEach(p => { 
+                        const input = document.getElementById(`ord_${c.id}_${p.id}`);
+                        const q = parseInt(input?.value || 0); 
                         if(q > 0) { 
                             const price = (c.customRates && c.customRates[p.id]) ? c.customRates[p.id] : p.price; 
-                            // Important: Sending productId so backend uses ID, not Name
                             items.push({ productId: p.id, name: p.name, quantity: q, price }); 
                             total += q * price; 
                         } 
                     });
-                    // Logic: Send even empty orders if we are clearing them out, but usually checking length > 0 is fine unless deleting
                     if(items.length > 0) {
                          ordersToSave.push({ id: `ORD-${Date.now()}-${c.id}`, customerId: c.id, customerName: c.name, items, total, status });
                     }
@@ -528,7 +720,7 @@
                 if(res) { 
                     showToast(`${status === 'draft' ? 'Draft Saved' : 'Finalized'}: ${res.message}`); 
                     await store.sync(); 
-                    await this.render(); // Re-render to lock if finalized
+                    await this.render(); 
                 }
             }
         };
@@ -543,9 +735,13 @@
         };
 
         const expenseManager = { render() { const s = document.getElementById('expCategory'); s.innerHTML = ''; store.data.expenseCategories.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`); const emp = document.getElementById('expEmployee'); emp.innerHTML = '<option value="">-- Other / Vendor --</option>'; const filter = document.getElementById('expLogFilter'); if(filter) { const currentVal = filter.value; filter.innerHTML = '<option value="">All Staff/Vendors</option>'; store.data.employees.forEach(e => { const opt = `<option value="${e.name}">${e.name} (${e.role})</option>`; emp.innerHTML += opt; filter.innerHTML += `<option value="${e.name}">${e.name}</option>`; }); filter.value = currentVal; } else { store.data.employees.forEach(e => emp.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`); } this.renderLog(); }, async renderLog() { const tbody = document.getElementById('expenseTableBody'); tbody.innerHTML = ''; const empFilter = document.getElementById('expLogFilter')?.value || ''; let exps = store.data.expenses; if(empFilter) exps = exps.filter(e => e.employeeId === empFilter); exps.sort((a,b) => new Date(b.date) - new Date(a.date)); const grouped = {}; exps.forEach(e => { const d = new Date(e.date); const key = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); if(!grouped[key]) grouped[key] = { total: 0, items: [] }; grouped[key].items.push(e); grouped[key].total += e.amount; }); Object.keys(grouped).forEach(month => { tbody.innerHTML += `<tr class="bg-gray-50 border-b border-gray-100"><td colspan="2" class="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider pl-4">${month}</td><td class="p-3 text-right text-xs font-bold text-gray-600">Total: ₹${grouped[month].total.toLocaleString()}</td></tr>`; grouped[month].items.forEach(e => { tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50 row-hover"><td class="p-4 text-slate-500 pl-8">${e.date}</td><td class="p-4 font-medium"><div class="text-slate-800">${e.title}</div><div class="mt-1"><span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 border">${e.category}</span> ${e.employeeId ? `<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"><i class="fas fa-user mr-1"></i>${e.employeeId}</span>` : ''}</div></td><td class="p-4 text-right font-bold text-red-500">₹${e.amount}</td></tr>`; }); }); }, async add(e) { e.preventDefault(); const body = { title: document.getElementById('expTitle').value, amount: parseFloat(document.getElementById('expAmount').value), category: document.getElementById('expCategory').value, date: document.getElementById('expDate').value, employeeId: document.getElementById('expEmployee').value }; if(await api.post('/api/expenses', body)) { showToast('Expense Added'); await store.sync(); this.render(); } } };
-        const settingsManager = { render() { const c = document.getElementById('productSettingsList'); c.innerHTML = ''; store.data.products.forEach(p => c.innerHTML += `<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative group"><button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><div class="font-bold text-slate-700 mb-2">${p.name}</div><div class="flex items-center gap-2"><span class=\"text-sm font-bold text-slate-500\">₹</span><input type=\"number\" class=\"w-full border rounded-lg p-1.5 text-sm bg-white focus:outline-none focus:border-brand-500\" value=\"${p.price}\" onchange=\"settingsManager.updatePrice('${p.id}', this.value)\"></div></div>`); const e = document.getElementById('employeeList'); e.innerHTML = ''; store.data.employees.forEach(emp => e.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 group"><div><div class="font-bold text-sm text-slate-800">${emp.name}</div><div class="text-xs text-slate-500">${emp.role} • ${emp.phone || 'No Phone'}</div></div><button onclick="settingsManager.delEmployee('${emp.id}')" class="text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button></div>`); }, async addProduct() { const name = prompt("Name:"); const price = prompt("Price:"); if(name && price) { await api.post('/api/products', {name, price: parseFloat(price)}); await store.sync(); this.render(); } }, async delProduct(id) { ui.showConfirm('Delete Product?', 'Are you sure? This will remove the product from future lists.', async () => { await api.del(`/api/products/${id}`); await store.sync(); this.render(); }); }, async updatePrice(id, val) { await api.put(`/api/products/${id}`, {price: parseFloat(val)}); await store.sync(); }, openEmployeeModal() { document.getElementById('employeeModal').classList.remove('hidden'); document.getElementById('empName').value = ''; document.getElementById('empPhone').value = ''; document.getElementById('empRole').value = ''; }, closeEmployeeModal() { document.getElementById('employeeModal').classList.add('hidden'); }, async saveEmployee() { const body = { name: document.getElementById('empName').value, phone: document.getElementById('empPhone').value, role: document.getElementById('empRole').value }; if(await api.post('/api/employees', body)) { this.closeEmployeeModal(); await store.sync(); this.render(); } }, async delEmployee(id) { ui.showConfirm('Remove Staff?', 'Are you sure you want to remove this employee?', async () => { await api.del(`/api/employees/${id}`); await store.sync(); this.render(); }); } };
-        window.onload = () => document.getElementById('username').focus();
+        const settingsManager = { render() { const c = document.getElementById('productSettingsList'); c.innerHTML = ''; store.data.products.forEach(p => { if (p.isActive !== false) { c.innerHTML += `<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative group"><button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><div class="font-bold text-slate-700 mb-2">${p.name}</div><div class="flex items-center gap-2"><span class=\"text-sm font-bold text-slate-500\">₹</span><input type=\"number\" class=\"w-full border rounded-lg p-1.5 text-sm bg-white focus:outline-none focus:border-brand-500\" value=\"${p.price}\" onchange=\"settingsManager.updatePrice('${p.id}', this.value)\"></div></div>`}}); const e = document.getElementById('employeeList'); e.innerHTML = ''; store.data.employees.forEach(emp => e.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 group"><div><div class="font-bold text-sm text-slate-800">${emp.name}</div><div class="text-xs text-slate-500">${emp.role} • ${emp.phone || 'No Phone'}</div></div><button onclick="settingsManager.delEmployee('${emp.id}')" class="text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button></div>`); }, async addProduct() { const name = prompt("Name:"); const price = prompt("Price:"); if(name && price) { await api.post('/api/products', {name, price: parseFloat(price)}); await store.sync(); this.render(); } }, async delProduct(id) { ui.showConfirm('Delete Product?', 'Are you sure? This will remove the product from future sheets, but keep history.', async () => { await api.del(`/api/products/${id}`); await store.sync(); this.render(); }); }, async updatePrice(id, val) { await api.put(`/api/products/${id}`, {price: parseFloat(val)}); await store.sync(); }, openEmployeeModal() { document.getElementById('employeeModal').classList.remove('hidden'); document.getElementById('empName').value = ''; document.getElementById('empPhone').value = ''; document.getElementById('empRole').value = ''; }, closeEmployeeModal() { document.getElementById('employeeModal').classList.add('hidden'); }, async saveEmployee() { const body = { name: document.getElementById('empName').value, phone: document.getElementById('empPhone').value, role: document.getElementById('empRole').value }; if(await api.post('/api/employees', body)) { this.closeEmployeeModal(); await store.sync(); this.render(); } }, async delEmployee(id) { ui.showConfirm('Remove Staff?', 'Are you sure you want to remove this employee?', async () => { await api.del(`/api/employees/${id}`); await store.sync(); this.render(); }); } };
+        
+        // Window Load: Check for Token
+        window.onload = () => {
+            auth.check();
+            document.getElementById('username').focus();
+        };
     </script>
 </body>
-
 </html>
