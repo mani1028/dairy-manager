@@ -1,1 +1,1 @@
-web: gunicorn dairy_backend:app
+web: gunicorn app:app
