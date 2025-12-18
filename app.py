@@ -245,50 +245,13 @@ def reset_db():
         print(f"RESET DB ERROR: {e}") # Log error to terminal for debugging
         return jsonify({"error": str(e)}), 500
 
-# --- 1. REGISTRATION & LOGIN ---
-
-@app.route('/api/register', methods=['POST'])
-def register():
-    data = request.json
-    business_name = data.get('business_name')
-    location = data.get('location')
-    username = data.get('username')
-    password = data.get('password')
-    
-    if DairyUser.query.filter_by(username=username).first():
-        return jsonify({"error": "Username taken"}), 400
-
-    tid, code, seq = generate_tenant_id(location)
-    tenant = DairyTenant(id=tid, name=business_name, location_code=code, location_seq=seq)
-    db.session.add(tenant)
-    user = DairyUser(username=username, password=password, tenant_id=tid)
-    db.session.add(user)
-    
-    for p in DEFAULT_PRODUCTS:
-        new_prod = Product(
-            id=f"{tid}_{p['code']}",
-            tenant_id=tid,
-            name=p['name'],
-            price=p['price'],
-            unit=p['unit'],
-            is_active=True
-        )
-        db.session.add(new_prod)
-        
-    db.session.commit()
-    token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
-    return jsonify({
-        "message": "Account created!",
-        "token": token,
-        "tenant_id": tid,
-        "business_name": tenant.name
-    })
-
+# --- 1. LOGIN ---
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
     user = DairyUser.query.filter_by(username=data.get('username')).first()
     
+    # Simple password check (Note: For strict production, consider hashing passwords with bcrypt)
     if user and user.password == data.get('password'):
         token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
         tenant = DairyTenant.query.get(user.tenant_id)
@@ -627,4 +590,5 @@ def mod_product(id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5000)
+    # CHANGE: Debug must be False for production
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
