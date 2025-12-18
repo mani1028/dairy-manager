@@ -440,7 +440,7 @@
 
     <script>
         // --- FIXED API URL (REMOVED TRAILING SLASH) ---
-        const API_BASE = "http://127.0.0.1:5000";
+        const API_BASE = "https://dairy-manager.onrender.com/";
 
         const showToast = (msg, type='success') => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const color = type === 'error' ? 'bg-red-500' : 'bg-slate-800'; const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'; toast.className = `${color} text-white px-6 py-4 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 flex items-center min-w-[320px] pointer-events-auto backdrop-blur-md bg-opacity-95`; toast.innerHTML = `<i class="fas ${icon} mr-3 text-lg"></i> <span class="font-medium">${msg}</span>`; container.appendChild(toast); requestAnimationFrame(() => toast.classList.remove('translate-y-10', 'opacity-0')); setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000); };
         const ui = { confirmCallback: null, showConfirm(title, msg, callback) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmMsg').innerText = msg; this.confirmCallback = callback; document.getElementById('confirmModal').classList.remove('hidden'); document.getElementById('confirmYesBtn').focus(); }, closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); this.confirmCallback = null; }, triggerConfirm() { if(this.confirmCallback) this.confirmCallback(); this.closeConfirm(); } }; document.getElementById('confirmYesBtn').onclick = () => ui.triggerConfirm();
@@ -744,4 +744,5 @@
         };
     </script>
 </body>
+
 </html>
