@@ -18,16 +18,14 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-secure-random-key-in-production')
 CORS(app) 
 
-# --- DATABASE SETUP (FIXED) ---
-# 1. Get the URL from environment (Render sets this automatically)
+# --- DATABASE SETUP ---
 database_url = os.environ.get('DATABASE_URL')
 
-# 2. Fallback for local testing (Your Supabase URL)
+# Fallback for local testing
 if not database_url:
-    # REPLACE THIS WITH YOUR ACTUAL SUPABASE URL IF TESTING LOCALLY
+    # REPLACE WITH YOUR ACTUAL DATABASE URL FOR LOCAL TESTING
     database_url = "postgresql://postgres.tkgnfijktdmvgvsdbneq:IKyNw6s0HdwGpKQ1@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
 
-# 3. Fix the 'postgres://' vs 'postgresql://' issue
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -38,7 +36,6 @@ db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # --- DEFAULT PRODUCTS LIST ---
-# These products will be automatically added for every new shop registered.
 DEFAULT_PRODUCTS = [
     {'code': 'p1', 'name': 'FCM 1L', 'price': 70, 'unit': 'Pkt'},
     {'code': 'p2', 'name': 'FCM 500ml', 'price': 35, 'unit': 'Pkt'},
@@ -64,7 +61,7 @@ DEFAULT_PRODUCTS = [
     {'code': 'p25', 'name': 'Ghee', 'price': 600, 'unit': 'Kg'},
 ]
 
-# --- MULTI-TENANT MODELS ---
+# --- MODELS ---
 
 class DairyTenant(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -80,8 +77,6 @@ class DairyUser(db.Model):
     role = db.Column(db.String(20), default='admin')
     tenant_id = db.Column(db.String(50), db.ForeignKey('dairy_tenant.id'), nullable=False)
 
-# --- APP MODELS (TENANT SCOPED) ---
-
 class Employee(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     tenant_id = db.Column(db.String(50), db.ForeignKey('dairy_tenant.id'), nullable=False)
@@ -89,8 +84,7 @@ class Employee(db.Model):
     phone = db.Column(db.String(20))
     role = db.Column(db.String(50))
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name, "phone": self.phone, "role": self.role}
+    def to_dict(self): return {"id": self.id, "name": self.name, "phone": self.phone, "role": self.role}
 
 class Product(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -100,8 +94,7 @@ class Product(db.Model):
     unit = db.Column(db.String(20))
     is_active = db.Column(db.Boolean, default=True)
 
-    def to_dict(self):
-        return {"id": self.id, "name": self.name, "price": self.price, "unit": self.unit, "isActive": self.is_active}
+    def to_dict(self): return {"id": self.id, "name": self.name, "price": self.price, "unit": self.unit, "isActive": self.is_active}
 
 class Customer(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -115,11 +108,7 @@ class Customer(db.Model):
 
     def to_dict(self):
         custom_rates = {r.product_id: r.rate for r in self.rates}
-        return {
-            "id": self.id, "name": self.name, "phone": self.phone, 
-            "address": self.address, "dues": self.dues, 
-            "status": self.status, "customRates": custom_rates
-        }
+        return {"id": self.id, "name": self.name, "phone": self.phone, "address": self.address, "dues": self.dues, "status": self.status, "customRates": custom_rates}
 
 class CustomerRate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -141,11 +130,8 @@ class Order(db.Model):
     def to_dict(self):
         items_list = []
         if self.items_json:
-            try:
-                items_list = json.loads(self.items_json)
-            except:
-                items_list = []
-        
+            try: items_list = json.loads(self.items_json)
+            except: items_list = []
         formatted_items = []
         for i in items_list:
             formatted_items.append({
@@ -154,12 +140,7 @@ class Order(db.Model):
                 "quantity": i.get('quantity'),
                 "price": i.get('price')
             })
-
-        return {
-            "id": self.id, "customerId": self.customer_id, "customerName": self.customer_name,
-            "date": self.date, "status": self.status, "total": self.total,
-            "items": formatted_items
-        }
+        return {"id": self.id, "customerId": self.customer_id, "customerName": self.customer_name, "date": self.date, "status": self.status, "total": self.total, "items": formatted_items}
 
 class Payment(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -170,11 +151,7 @@ class Payment(db.Model):
     collected_by = db.Column(db.String(100))
     note = db.Column(db.String(200))
 
-    def to_dict(self):
-        return {
-            "id": self.id, "customerId": self.customer_id, "amount": self.amount,
-            "date": self.date, "collectedBy": self.collected_by, "note": self.note
-        }
+    def to_dict(self): return {"id": self.id, "customerId": self.customer_id, "amount": self.amount, "date": self.date, "collectedBy": self.collected_by, "note": self.note}
 
 class Expense(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -185,83 +162,59 @@ class Expense(db.Model):
     date = db.Column(db.String(20))
     employee_id = db.Column(db.String(50)) 
 
-    def to_dict(self):
-        return {
-            "id": self.id, "title": self.title, "amount": self.amount,
-            "category": self.category, "date": self.date, "employeeId": self.employee_id
-        }
+    def to_dict(self): return {"id": self.id, "title": self.title, "amount": self.amount, "category": self.category, "date": self.date, "employeeId": self.employee_id}
 
-# --- HELPERS & MIDDLEWARE ---
+# --- HELPERS ---
 
 def generate_tenant_id(location_name):
-    # Generates a unique Shop ID based on location (e.g., WL01, WL02)
     codes = {"Warangal": "WL", "Hyderabad": "HYD", "Karimnagar": "KR"}
     code = codes.get(location_name, location_name[:3].upper() if location_name else "GEN")
-    
     last_tenant = DairyTenant.query.filter_by(location_code=code).order_by(DairyTenant.location_seq.desc()).first()
     seq = (last_tenant.location_seq + 1) if last_tenant else 1
-    
     return f"{code}{seq:02d}", code, seq
 
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return jsonify({'error': 'Missing token'}), 401
+        if not auth_header: return jsonify({'error': 'Missing token'}), 401
         try:
             token = auth_header.split(" ")[1]
-            data = serializer.loads(token, max_age=86400) # Valid for 1 day
+            data = serializer.loads(token, max_age=86400)
             g.tenant_id = data['tenant_id']
             g.user_id = data['user_id']
-        except (SignatureExpired, BadSignature, IndexError):
-            return jsonify({'error': 'Invalid or expired token'}), 401
+        except Exception: return jsonify({'error': 'Invalid or expired token'}), 401
         return f(*args, **kwargs)
     return decorated
 
 # --- ROUTES ---
 
 @app.route('/')
-def home():
-    return send_file('index.html')
-
 @app.route('/index.html')
-def home_explicit():
-    return send_file('index.html')
+def home(): return send_file('index.html')
 
 @app.route('/reports.html')
-@app.route('/reports')
-def reports_page():
-    return send_file('reports.html')
-
-# --- AUTHENTICATION & REGISTRATION ---
+def reports_page(): return send_file('reports.html')
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    # This endpoint creates a new Shop (Tenant) and a new Admin User for it.
-    # It also populates the shop with the DEFAULT_PRODUCTS.
     data = request.json
     business_name = data.get('business_name')
     location = data.get('location')
     username = data.get('username')
     password = data.get('password')
     
-    if not username or not password or not business_name:
-        return jsonify({"error": "Missing required fields"}), 400
+    if not username or not password or not business_name: return jsonify({"error": "Missing required fields"}), 400
+    if DairyUser.query.filter_by(username=username).first(): return jsonify({"error": "Username taken"}), 400
 
-    if DairyUser.query.filter_by(username=username).first():
-        return jsonify({"error": "Username taken"}), 400
-
-    # 1. Create Tenant
     tid, code, seq = generate_tenant_id(location)
     tenant = DairyTenant(id=tid, name=business_name, location_code=code, location_seq=seq)
     db.session.add(tenant)
 
-    # 2. Create User
     user = DairyUser(username=username, password=password, tenant_id=tid, role='admin')
     db.session.add(user)
     
-    # 3. Create Default Products for this Tenant
+    # Auto-seed products on register
     for p in DEFAULT_PRODUCTS:
         new_prod = Product(
             id=f"{tid}_{p['code']}",
@@ -274,14 +227,8 @@ def register():
         db.session.add(new_prod)
         
     db.session.commit()
-    
     token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
-    return jsonify({
-        "message": "Account created successfully!",
-        "token": token,
-        "tenant_id": tid,
-        "business_name": tenant.name
-    })
+    return jsonify({"message": "Account created!", "token": token, "tenant_id": tid, "business_name": tenant.name})
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -289,6 +236,23 @@ def login():
     user = DairyUser.query.filter_by(username=data.get('username')).first()
     
     if user and user.password == data.get('password'):
+        # --- SELF-HEALING: Check if products exist, if not, create them ---
+        existing_products_count = Product.query.filter_by(tenant_id=user.tenant_id).count()
+        if existing_products_count == 0:
+            print(f"Auto-seeding products for {user.tenant_id}")
+            for p in DEFAULT_PRODUCTS:
+                new_prod = Product(
+                    id=f"{user.tenant_id}_{p['code']}",
+                    tenant_id=user.tenant_id,
+                    name=p['name'],
+                    price=p['price'],
+                    unit=p['unit'],
+                    is_active=True
+                )
+                db.session.add(new_prod)
+            db.session.commit()
+        # ------------------------------------------------------------------
+
         token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
         tenant = DairyTenant.query.get(user.tenant_id)
         return jsonify({
@@ -310,26 +274,17 @@ def sync_data():
         employees = [e.to_dict() for e in Employee.query.filter_by(tenant_id=tid).all()]
         recent_payments = [p.to_dict() for p in Payment.query.filter_by(tenant_id=tid).order_by(Payment.date.desc()).limit(1000).all()]
         expenses = [e.to_dict() for e in Expense.query.filter_by(tenant_id=tid).order_by(Expense.date.desc()).limit(1000).all()]
-        
         year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
         recent_orders = [o.to_dict() for o in Order.query.filter(and_(Order.tenant_id == tid, Order.date >= year_ago)).all()]
-        
-        return jsonify({
-            "customers": customers, "products": products, "employees": employees,
-            "payments": recent_payments, "expenses": expenses, "orders": recent_orders
-        })
-    except OperationalError:
-        return jsonify({"error": "Database error."}), 500
-
-# --- CORE API ROUTES ---
+        return jsonify({"customers": customers, "products": products, "employees": employees, "payments": recent_payments, "expenses": expenses, "orders": recent_orders})
+    except OperationalError: return jsonify({"error": "Database error."}), 500
 
 @app.route('/api/customers', methods=['POST'])
 @require_auth
 def add_customer():
     data = request.json
     tid = g.tenant_id
-    if Customer.query.filter_by(tenant_id=tid, phone=data['phone']).first():
-        return jsonify({"error": "Phone number already exists"}), 400
+    if Customer.query.filter_by(tenant_id=tid, phone=data['phone']).first(): return jsonify({"error": "Phone exists"}), 400
     count = Customer.query.filter_by(tenant_id=tid).count()
     new_id = f"{tid}C{count + 1:03d}"
     c = Customer(id=new_id, tenant_id=tid, name=data['name'], phone=data['phone'], address=data.get('address'), dues=float(data.get('dues', 0)))
@@ -342,16 +297,11 @@ def add_customer():
 def mod_customer(id):
     c = Customer.query.filter_by(id=id, tenant_id=g.tenant_id).first()
     if not c: return jsonify({"error": "Not found"}), 404
-    
-    if request.method == 'DELETE':
-        db.session.delete(c)
+    if request.method == 'DELETE': db.session.delete(c)
     else:
         data = request.json
-        c.name = data['name']
-        c.phone = data['phone']
-        c.address = data.get('address')
+        c.name, c.phone, c.address = data['name'], data['phone'], data.get('address')
         if 'dues' in data: c.dues = float(data['dues'])
-    
     db.session.commit()
     return jsonify(c.to_dict() if request.method == 'PUT' else {"message": "Deleted"})
 
@@ -360,128 +310,86 @@ def mod_customer(id):
 def update_rates(cid):
     data = request.json
     tid = g.tenant_id
-    rates_map = data.get('rates', {})
-    scope = data.get('scope', 'future')
-
     CustomerRate.query.filter_by(customer_id=cid, tenant_id=tid).delete()
-    for pid, rate in rates_map.items():
+    for pid, rate in data.get('rates', {}).items():
         db.session.add(CustomerRate(tenant_id=tid, customer_id=cid, product_id=pid, rate=rate))
     
-    updated_draft = False
-    if scope == 'today':
+    if data.get('scope') == 'today':
         today = datetime.now().strftime('%Y-%m-%d')
         draft_order = Order.query.filter_by(customer_id=cid, date=today, status='draft', tenant_id=tid).first()
         if draft_order:
-            items = []
-            if draft_order.items_json:
-                items = json.loads(draft_order.items_json)
-            
+            items = json.loads(draft_order.items_json) if draft_order.items_json else []
             new_total = 0
             for item in items:
                 pid = item.get('productId') or item.get('id')
                 prod = Product.query.filter_by(id=pid, tenant_id=tid).first()
                 if prod:
-                    new_rate = rates_map.get(prod.id, prod.price)
+                    new_rate = data.get('rates', {}).get(prod.id, prod.price)
                     item['price'] = new_rate
                     new_total += item['quantity'] * new_rate
-            
             draft_order.items_json = json.dumps(items)
             draft_order.total = new_total
-            updated_draft = True
-
     db.session.commit()
-    return jsonify({"message": "Rates updated", "draft_updated": updated_draft})
+    return jsonify({"message": "Rates updated"})
 
 @app.route('/api/sheets/finalize', methods=['POST'])
 @require_auth
 def finalize_sheet():
     data = request.json
-    date_str = data.get('date')
-    tid = g.tenant_id
-    
+    tid, date_str = g.tenant_id, data.get('date')
     if not date_str: return jsonify({"error": "Date required"}), 400
-
     orders = Order.query.filter_by(date=date_str, tenant_id=tid).all()
     count = 0
-    
     for o in orders:
         if o.status != 'finalized':
             cust = Customer.query.filter_by(id=o.customer_id, tenant_id=tid).first()
-            if cust:
-                cust.dues += o.total
+            if cust: cust.dues += o.total
             o.status = 'finalized'
             count += 1
-            
     db.session.commit()
-    return jsonify({"success": True, "message": f"Finalized {count} orders for {date_str}"})
+    return jsonify({"success": True, "message": f"Finalized {count} orders"})
 
 @app.route('/api/orders', methods=['GET'])
 @require_auth
 def get_orders():
-    date_str = request.args.get('date')
-    orders = Order.query.filter_by(date=date_str, tenant_id=g.tenant_id).all()
+    orders = Order.query.filter_by(date=request.args.get('date'), tenant_id=g.tenant_id).all()
     return jsonify([o.to_dict() for o in orders])
 
 @app.route('/api/orders/save', methods=['POST'])
 @require_auth
 def save_orders():
-    data = request.json
-    tid = g.tenant_id
-    date_str = data['date']
-    incoming_orders = data['orders']
-    count = 0
-    
-    for ord_data in incoming_orders:
-        customer_id = ord_data['customerId']
-        cust = Customer.query.filter_by(id=customer_id, tenant_id=tid).first()
+    data, tid = request.json, g.tenant_id
+    date_str, count = data['date'], 0
+    for ord_data in data['orders']:
+        cust = Customer.query.filter_by(id=ord_data['customerId'], tenant_id=tid).first()
         if not cust: continue
-
-        existing = Order.query.filter_by(customer_id=customer_id, date=date_str, tenant_id=tid).first()
-        
-        if existing and existing.status == 'finalized':
-            cust.dues -= existing.total
+        existing = Order.query.filter_by(customer_id=ord_data['customerId'], date=date_str, tenant_id=tid).first()
+        if existing and existing.status == 'finalized': cust.dues -= existing.total
         
         items_json_str = json.dumps(ord_data['items'])
-
         if existing:
             existing.total = ord_data['total']
             existing.status = ord_data['status']
             existing.customer_name = ord_data['customerName']
-            existing.items_json = items_json_str 
+            existing.items_json = items_json_str
         else:
-            new_order = Order(
-                id=ord_data['id'], tenant_id=tid, customer_id=customer_id, 
-                customer_name=ord_data['customerName'], date=date_str, 
-                status=ord_data['status'], total=ord_data['total'],
-                items_json=items_json_str 
-            )
-            db.session.add(new_order)
+            db.session.add(Order(id=ord_data['id'], tenant_id=tid, customer_id=cust.id, customer_name=ord_data['customerName'], date=date_str, status=ord_data['status'], total=ord_data['total'], items_json=items_json_str))
         
-        if ord_data['status'] == 'finalized':
-            cust.dues += ord_data['total']
+        if ord_data['status'] == 'finalized': cust.dues += ord_data['total']
         count += 1
-        
     db.session.commit()
-    return jsonify({"message": f"Processed {count} orders. Ledgers updated."})
+    return jsonify({"message": f"Processed {count} orders."})
 
 @app.route('/api/payments', methods=['POST'])
 @require_auth
 def add_payment():
-    data = request.json
-    tid = g.tenant_id
+    data, tid = request.json, g.tenant_id
     cust = Customer.query.filter_by(id=data['customerId'], tenant_id=tid).first()
     if not cust: return jsonify({"error": "Customer not found"}), 404
-
-    new_pay = Payment(
-        id=str(int(datetime.now().timestamp() * 1000)), 
-        tenant_id=tid, customer_id=data['customerId'],
-        amount=data['amount'], date=data['date'], 
-        collected_by=data.get('collectedBy'), note=data.get('note')
-    )
+    db.session.add(Payment(id=str(int(datetime.now().timestamp() * 1000)), tenant_id=tid, customer_id=data['customerId'], amount=data['amount'], date=data['date'], collected_by=data.get('collectedBy'), note=data.get('note')))
     cust.dues -= float(data['amount'])
-    db.session.add(new_pay)
     db.session.commit()
-    return jsonify({"message": "Payment recorded", "new_dues": cust.dues})
+    return jsonify({"message": "Payment recorded"})
 
 @app.route('/api/expenses', methods=['GET', 'POST'])
 @require_auth
@@ -489,90 +397,54 @@ def manage_expenses():
     tid = g.tenant_id
     if request.method == 'POST':
         data = request.json
-        exp = Expense(
-            id=str(int(datetime.now().timestamp())), tenant_id=tid,
-            title=data['title'], amount=data['amount'],
-            category=data['category'], date=data['date'], employee_id=data.get('employeeId')
-        )
+        exp = Expense(id=str(int(datetime.now().timestamp())), tenant_id=tid, title=data['title'], amount=data['amount'], category=data['category'], date=data['date'], employee_id=data.get('employeeId'))
         db.session.add(exp)
         db.session.commit()
         return jsonify(exp.to_dict())
     else:
-        start = request.args.get('startDate')
-        end = request.args.get('endDate')
-        emp_id = request.args.get('employeeId')
         query = Expense.query.filter_by(tenant_id=tid)
-        if start and end: query = query.filter(and_(Expense.date >= start, Expense.date <= end))
-        if emp_id: query = query.filter_by(employee_id=emp_id)
-        exps = query.order_by(Expense.date.desc()).all()
-        return jsonify([e.to_dict() for e in exps])
+        if request.args.get('startDate') and request.args.get('endDate'): query = query.filter(and_(Expense.date >= request.args.get('startDate'), Expense.date <= request.args.get('endDate')))
+        if request.args.get('employeeId'): query = query.filter_by(employee_id=request.args.get('employeeId'))
+        return jsonify([e.to_dict() for e in query.order_by(Expense.date.desc()).all()])
 
 @app.route('/api/reports/data', methods=['GET'])
 @require_auth
 def get_report_data():
-    tid = g.tenant_id
-    start = request.args.get('start')
-    end = request.args.get('end')
-    if not start or not end: return jsonify({"error": "Start and End dates required"}), 400
-
-    orders = Order.query.filter(and_(Order.tenant_id == tid, Order.date >= start, Order.date <= end)).all()
-    payments = Payment.query.filter(and_(Payment.tenant_id == tid, Payment.date >= start, Payment.date <= end)).all()
-    expenses = Expense.query.filter(and_(Expense.tenant_id == tid, Expense.date >= start, Expense.date <= end)).all()
-
+    tid, start, end = g.tenant_id, request.args.get('start'), request.args.get('end')
+    if not start or not end: return jsonify({"error": "Dates required"}), 400
     return jsonify({
-        "orders": [o.to_dict() for o in orders],
-        "payments": [p.to_dict() for p in payments],
-        "expenses": [e.to_dict() for e in expenses]
+        "orders": [o.to_dict() for o in Order.query.filter(and_(Order.tenant_id == tid, Order.date >= start, Order.date <= end)).all()],
+        "payments": [p.to_dict() for p in Payment.query.filter(and_(Payment.tenant_id == tid, Payment.date >= start, Payment.date <= end)).all()],
+        "expenses": [e.to_dict() for e in Expense.query.filter(and_(Expense.tenant_id == tid, Expense.date >= start, Expense.date <= end)).all()]
     })
 
 @app.route('/api/dashboard', methods=['GET'])
 @require_auth
 def dashboard_stats():
-    tid = g.tenant_id
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    
+    tid, date_str = g.tenant_id, request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
     live_total_dues = db.session.query(func.sum(Customer.dues)).filter_by(tenant_id=tid).scalar() or 0
     active_customers = Customer.query.filter_by(tenant_id=tid, status='Active').count()
-
-    future_orders = Order.query.filter(and_(Order.tenant_id == tid, Order.date > date_str, Order.status == 'finalized')).all()
-    future_payments = Payment.query.filter(and_(Payment.tenant_id == tid, Payment.date > date_str)).all()
     
-    future_sales_sum = sum(o.total for o in future_orders)
-    future_payments_sum = sum(p.amount for p in future_payments)
-    
-    closing_balance_selected_date = live_total_dues - future_sales_sum + future_payments_sum
+    future_sales = sum(o.total for o in Order.query.filter(and_(Order.tenant_id == tid, Order.date > date_str, Order.status == 'finalized')).all())
+    future_collections = sum(p.amount for p in Payment.query.filter(and_(Payment.tenant_id == tid, Payment.date > date_str)).all())
     
     today_orders = Order.query.filter_by(date=date_str, tenant_id=tid).all()
     revenue_finalized = sum(o.total for o in today_orders if o.status == 'finalized')
+    collection_today = sum(p.amount for p in Payment.query.filter_by(date=date_str, tenant_id=tid).all())
     
-    today_payments = Payment.query.filter_by(date=date_str, tenant_id=tid).all()
-    collection_today = sum(p.amount for p in today_payments)
-    
-    opening_balance = closing_balance_selected_date - revenue_finalized + collection_today
+    total_dues_on_date = live_total_dues - future_sales + future_collections
+    opening_balance = total_dues_on_date - revenue_finalized + collection_today
 
-    prev_date_str = (datetime.strptime(date_str, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
-    prev_orders = Order.query.filter_by(date=prev_date_str, tenant_id=tid).all()
-    prev_revenue = sum(o.total for o in prev_orders if o.status == 'finalized')
-    
-    pct_change = 0
-    if prev_revenue > 0: pct_change = ((revenue_finalized - prev_revenue) / prev_revenue) * 100
-    elif revenue_finalized > 0: pct_change = 100
+    prev_date = (datetime.strptime(date_str, '%Y-%m-%d') - timedelta(days=1)).strftime('%Y-%m-%d')
+    prev_rev = sum(o.total for o in Order.query.filter_by(date=prev_date, tenant_id=tid).all() if o.status == 'finalized')
+    pct = ((revenue_finalized - prev_rev) / prev_rev * 100) if prev_rev > 0 else (100 if revenue_finalized > 0 else 0)
 
-    return jsonify({
-        "revenue_today": sum(o.total for o in today_orders),
-        "revenue_finalized": revenue_finalized,
-        "revenue_pct_change": round(pct_change, 1),
-        "collection_today": collection_today,
-        "total_dues": round(closing_balance_selected_date, 2),
-        "opening_balance": round(opening_balance, 2),
-        "active_customers": active_customers
-    })
+    return jsonify({"revenue_today": sum(o.total for o in today_orders), "revenue_finalized": revenue_finalized, "revenue_pct_change": round(pct, 1), "collection_today": collection_today, "total_dues": round(total_dues_on_date, 2), "opening_balance": round(opening_balance, 2), "active_customers": active_customers})
 
 @app.route('/api/employees', methods=['POST'])
 @require_auth
 def add_employee():
-    tid = g.tenant_id
-    data = request.json
+    data, tid = request.json, g.tenant_id
     count = Employee.query.filter_by(tenant_id=tid).count()
     emp = Employee(id=f"{tid}E{count+1}", tenant_id=tid, name=data['name'], phone=data['phone'], role=data['role'])
     db.session.add(emp)
@@ -589,13 +461,8 @@ def delete_employee(id):
 @app.route('/api/products', methods=['POST'])
 @require_auth
 def add_product():
-    tid = g.tenant_id
-    data = request.json
-    prod = Product(
-        id=f"{tid}_{int(datetime.now().timestamp())}", 
-        tenant_id=tid, 
-        name=data['name'], price=data['price'], unit='Unit', is_active=True
-    )
+    data, tid = request.json, g.tenant_id
+    prod = Product(id=f"{tid}_{int(datetime.now().timestamp())}", tenant_id=tid, name=data['name'], price=data['price'], unit='Unit', is_active=True)
     db.session.add(prod)
     db.session.commit()
     return jsonify(prod.to_dict())
@@ -605,12 +472,8 @@ def add_product():
 def mod_product(id):
     prod = Product.query.filter_by(id=id, tenant_id=g.tenant_id).first()
     if not prod: return jsonify({"error": "Not found"}), 404
-    
-    if request.method == 'DELETE': 
-        prod.is_active = False
-    elif request.method == 'PUT': 
-        prod.price = request.json['price']
-    
+    if request.method == 'DELETE': prod.is_active = False
+    elif request.method == 'PUT': prod.price = request.json['price']
     db.session.commit()
     return jsonify({"message": "Success"})
 
