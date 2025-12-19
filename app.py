@@ -24,6 +24,7 @@ database_url = os.environ.get('DATABASE_URL')
 
 # 2. Fallback for local testing (Your Supabase URL)
 if not database_url:
+    # REPLACE THIS WITH YOUR ACTUAL SUPABASE URL IF TESTING LOCALLY
     database_url = "postgresql://postgres.tkgnfijktdmvgvsdbneq:IKyNw6s0HdwGpKQ1@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
 
 # 3. Fix the 'postgres://' vs 'postgresql://' issue
@@ -36,6 +37,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+# --- DEFAULT PRODUCTS LIST ---
+# These products will be automatically added for every new shop registered.
 DEFAULT_PRODUCTS = [
     {'code': 'p1', 'name': 'FCM 1L', 'price': 70, 'unit': 'Pkt'},
     {'code': 'p2', 'name': 'FCM 500ml', 'price': 35, 'unit': 'Pkt'},
@@ -190,6 +193,16 @@ class Expense(db.Model):
 
 # --- HELPERS & MIDDLEWARE ---
 
+def generate_tenant_id(location_name):
+    # Generates a unique Shop ID based on location (e.g., WL01, WL02)
+    codes = {"Warangal": "WL", "Hyderabad": "HYD", "Karimnagar": "KR"}
+    code = codes.get(location_name, location_name[:3].upper() if location_name else "GEN")
+    
+    last_tenant = DairyTenant.query.filter_by(location_code=code).order_by(DairyTenant.location_seq.desc()).first()
+    seq = (last_tenant.location_seq + 1) if last_tenant else 1
+    
+    return f"{code}{seq:02d}", code, seq
+
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -221,7 +234,54 @@ def home_explicit():
 def reports_page():
     return send_file('reports.html')
 
-# --- AUTHENTICATION ---
+# --- AUTHENTICATION & REGISTRATION ---
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    # This endpoint creates a new Shop (Tenant) and a new Admin User for it.
+    # It also populates the shop with the DEFAULT_PRODUCTS.
+    data = request.json
+    business_name = data.get('business_name')
+    location = data.get('location')
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password or not business_name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if DairyUser.query.filter_by(username=username).first():
+        return jsonify({"error": "Username taken"}), 400
+
+    # 1. Create Tenant
+    tid, code, seq = generate_tenant_id(location)
+    tenant = DairyTenant(id=tid, name=business_name, location_code=code, location_seq=seq)
+    db.session.add(tenant)
+
+    # 2. Create User
+    user = DairyUser(username=username, password=password, tenant_id=tid, role='admin')
+    db.session.add(user)
+    
+    # 3. Create Default Products for this Tenant
+    for p in DEFAULT_PRODUCTS:
+        new_prod = Product(
+            id=f"{tid}_{p['code']}",
+            tenant_id=tid,
+            name=p['name'],
+            price=p['price'],
+            unit=p['unit'],
+            is_active=True
+        )
+        db.session.add(new_prod)
+        
+    db.session.commit()
+    
+    token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
+    return jsonify({
+        "message": "Account created successfully!",
+        "token": token,
+        "tenant_id": tid,
+        "business_name": tenant.name
+    })
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -555,12 +615,11 @@ def mod_product(id):
     return jsonify({"message": "Success"})
 
 
+# --- AUTO-CREATE TABLES ON STARTUP ---
+# This ensures tables are created even when running with Gunicorn on Render
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
     # This block is only for local testing via 'python app.py'
     app.run(debug=False, port=5000)
-
-
-
