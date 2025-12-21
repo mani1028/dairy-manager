@@ -5,8 +5,8 @@ from functools import wraps
 from flask import Flask, jsonify, request, send_file, g
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, and_
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import func, and_, inspect, text
+from sqlalchemy.exc import OperationalError, IntegrityError
 from dotenv import load_dotenv
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
@@ -83,8 +83,19 @@ class Employee(db.Model):
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20))
     role = db.Column(db.String(50))
+    # New columns for enhancements
+    designation = db.Column(db.String(100))
+    username = db.Column(db.String(50)) # Link to DairyUser if exists
 
-    def to_dict(self): return {"id": self.id, "name": self.name, "phone": self.phone, "role": self.role}
+    def to_dict(self): 
+        return {
+            "id": self.id, 
+            "name": self.name, 
+            "phone": self.phone, 
+            "role": self.role,
+            "designation": self.designation,
+            "username": self.username
+        }
 
 class Product(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -183,9 +194,24 @@ def require_auth(f):
             data = serializer.loads(token, max_age=86400)
             g.tenant_id = data['tenant_id']
             g.user_id = data['user_id']
+            
+            # Load Role
+            user = DairyUser.query.get(g.user_id)
+            g.role = user.role if user else 'admin'
+            
         except Exception: return jsonify({'error': 'Invalid or expired token'}), 401
         return f(*args, **kwargs)
     return decorated
+
+def require_role(roles):
+    def wrapper(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if g.role not in roles:
+                return jsonify({"error": "Access denied"}), 403
+            return f(*args, **kwargs)
+        return decorated
+    return wrapper
 
 # --- ROUTES ---
 
@@ -259,10 +285,162 @@ def login():
             "token": token,
             "tenant_id": user.tenant_id,
             "business_name": tenant.name,
-            "role": user.role
+            "role": user.role 
         })
         
     return jsonify({"error": "Invalid credentials"}), 401
+
+@app.route('/api/staff', methods=['POST'])
+@require_auth
+@require_role(['admin'])
+def add_staff():
+    data = request.json
+    tid = g.tenant_id
+    
+    username = data.get('username')
+    password = data.get('password')
+    
+    # Optional Login Creation
+    if username and password:
+        if DairyUser.query.filter_by(username=username).first():
+            return jsonify({"error": "Username already taken"}), 400
+        
+        user = DairyUser(
+            username=username,
+            password=password,
+            role=data['role'],
+            tenant_id=tid
+        )
+        db.session.add(user)
+        linked_username = username
+    else:
+        linked_username = None
+
+    # Create Employee Record
+    emp = Employee(
+        id=f"{tid}E{int(datetime.now().timestamp())}",
+        tenant_id=tid,
+        name=data['name'],
+        phone=data['phone'],
+        role=data['role'],
+        designation=data.get('designation', ''),
+        username=linked_username
+    )
+    db.session.add(emp)
+
+    db.session.commit()
+    return jsonify({"message": "Staff added successfully"})
+
+@app.route('/api/employees/<id>', methods=['PUT'])
+@require_auth
+@require_role(['admin'])
+def update_staff(id):
+    data = request.json
+    tid = g.tenant_id
+    
+    emp = Employee.query.filter_by(id=id, tenant_id=tid).first()
+    if not emp:
+        return jsonify({"error": "Employee not found"}), 404
+
+    # Update basic fields
+    emp.name = data['name']
+    emp.phone = data['phone']
+    emp.role = data['role']
+    emp.designation = data.get('designation', '')
+
+    # Handle Login Updates
+    username = data.get('username')
+    password = data.get('password')
+
+    # Case 1: User wants to set/change username
+    if username:
+        # Check if this employee already has a linked user
+        if emp.username and emp.username != username:
+            # Username changed? Check availability of new one
+            if DairyUser.query.filter_by(username=username).first():
+                return jsonify({"error": "New username is already taken"}), 400
+            
+            # Find old user and update or delete? 
+            # Strategy: Find user by old username and update it
+            old_user = DairyUser.query.filter_by(username=emp.username).first()
+            if old_user:
+                old_user.username = username
+                old_user.role = emp.role
+                if password: # Update password only if provided
+                    old_user.password = password
+            else:
+                 # Should not happen but fallback: create new
+                 new_user = DairyUser(username=username, password=password or "temp123", role=emp.role, tenant_id=tid)
+                 db.session.add(new_user)
+            
+            emp.username = username
+
+        elif not emp.username:
+            # Creating NEW login for existing employee
+            if DairyUser.query.filter_by(username=username).first():
+                return jsonify({"error": "Username is already taken"}), 400
+            if not password:
+                return jsonify({"error": "Password required when creating new login"}), 400
+            
+            new_user = DairyUser(username=username, password=password, role=emp.role, tenant_id=tid)
+            db.session.add(new_user)
+            emp.username = username
+        
+        else:
+            # Username matches existing. Update password/role if needed
+            existing_user = DairyUser.query.filter_by(username=username).first()
+            if existing_user:
+                existing_user.role = emp.role
+                if password: # Update password only if provided
+                    existing_user.password = password
+    
+    db.session.commit()
+    return jsonify({"message": "Staff updated successfully"})
+
+@app.route('/api/employees/<id>', methods=['DELETE'])
+@require_auth
+@require_role(['admin'])
+def delete_employee(id):
+    emp = Employee.query.filter_by(id=id, tenant_id=g.tenant_id).first()
+    if emp:
+        # If employee has a login, delete that too
+        if emp.username:
+            DairyUser.query.filter_by(username=emp.username).delete()
+        
+        db.session.delete(emp)
+        db.session.commit()
+    return jsonify({"message": "Deleted"})
+
+@app.route('/api/agent/dues', methods=['GET'])
+@require_auth
+@require_role(['admin', 'collection_agent'])
+def agent_dues():
+    tid = g.tenant_id
+    customers = Customer.query.filter_by(tenant_id=tid).all()
+    output = []
+
+    for c in customers:
+        # Calculate totals dynamically to be safe
+        orders = db.session.query(func.sum(Order.total)).filter_by(
+            tenant_id=tid, customer_id=c.id, status='finalized'
+        ).scalar() or 0
+
+        payments = db.session.query(func.sum(Payment.amount)).filter_by(
+            tenant_id=tid, customer_id=c.id
+        ).scalar() or 0
+
+        due_amount = orders - payments
+        
+        if due_amount != 0 or orders > 0:
+            output.append({
+                "customerId": c.id,
+                "name": c.name,
+                "totalOrders": orders,
+                "totalPayments": payments,
+                "due": due_amount
+            })
+
+    return jsonify(output)
 
 @app.route('/api/sync', methods=['GET'])
 @require_auth
@@ -441,23 +619,6 @@ def dashboard_stats():
 
     return jsonify({"revenue_today": sum(o.total for o in today_orders), "revenue_finalized": revenue_finalized, "revenue_pct_change": round(pct, 1), "collection_today": collection_today, "total_dues": round(total_dues_on_date, 2), "opening_balance": round(opening_balance, 2), "active_customers": active_customers})
 
-@app.route('/api/employees', methods=['POST'])
-@require_auth
-def add_employee():
-    data, tid = request.json, g.tenant_id
-    count = Employee.query.filter_by(tenant_id=tid).count()
-    emp = Employee(id=f"{tid}E{count+1}", tenant_id=tid, name=data['name'], phone=data['phone'], role=data['role'])
-    db.session.add(emp)
-    db.session.commit()
-    return jsonify(emp.to_dict())
-
-@app.route('/api/employees/<id>', methods=['DELETE'])
-@require_auth
-def delete_employee(id):
-    Employee.query.filter_by(id=id, tenant_id=g.tenant_id).delete()
-    db.session.commit()
-    return jsonify({"message": "Deleted"})
-
 @app.route('/api/products', methods=['POST'])
 @require_auth
 def add_product():
@@ -478,11 +639,26 @@ def mod_product(id):
     return jsonify({"message": "Success"})
 
 
-# --- AUTO-CREATE TABLES ON STARTUP ---
-# This ensures tables are created even when running with Gunicorn on Render
+# --- AUTO-CREATE TABLES & MIGRATION ON STARTUP ---
 with app.app_context():
     db.create_all()
+    
+    # --- AUTO MIGRATION LOGIC FOR NEW COLUMNS ---
+    try:
+        inspector = inspect(db.engine)
+        if 'employee' in inspector.get_table_names():
+            cols = [c['name'] for c in inspector.get_columns('employee')]
+            with db.engine.connect() as conn:
+                if 'designation' not in cols:
+                    print("Migrating: Adding designation column")
+                    conn.execute(text("ALTER TABLE employee ADD COLUMN designation VARCHAR(100)"))
+                if 'username' not in cols:
+                    print("Migrating: Adding username column")
+                    conn.execute(text("ALTER TABLE employee ADD COLUMN username VARCHAR(50)"))
+                conn.commit()
+    except Exception as e:
+        print(f"Migration warning (can be ignored if fresh DB): {e}")
+
 
 if __name__ == '__main__':
-    # This block is only for local testing via 'python app.py'
     app.run(debug=False, port=5000)

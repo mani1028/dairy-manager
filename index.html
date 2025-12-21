@@ -121,18 +121,21 @@
              <button onclick="app.toggleSidebarDesktop()" class="hidden md:block text-slate-500 hover:text-white focus:outline-none transition" title="Toggle Menu"><i class="fas fa-chevron-left transition-transform duration-300" id="collapseIcon"></i></button>
         </div>
         <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
-            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-4 sidebar-text tracking-wider">Operations</p>
-            <button onclick="router.navigate('dashboard')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="dashboard"><i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Dashboard</span></button>
-            <button onclick="router.navigate('orders')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="orders"><i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Orders & Route</span></button>
-            <button onclick="router.navigate('customers')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="customers"><i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Customers</span></button>
-            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">Finance</p>
-            <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="billing"><i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span></button>
-            <button onclick="router.navigate('expenses')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="expenses"><i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span></button>
+            <!-- AGENT SPECIFIC MENU -->
+            <button onclick="router.navigate('agent-dues')" id="nav-agent-dues" class="hidden nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-emerald-400 transition btn-hover group" data-target="agent-dues"><i class="fas fa-hand-holding-dollar w-5 text-center transition-colors"></i> <span class="sidebar-text font-medium">Collection Dues</span></button>
+
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-4 sidebar-text tracking-wider" data-admin-only>Operations</p>
+            <button onclick="router.navigate('dashboard')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="dashboard" data-admin-only><i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Dashboard</span></button>
+            <button onclick="router.navigate('orders')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="orders" data-admin-only><i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Orders & Route</span></button>
+            <button onclick="router.navigate('customers')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="customers" data-admin-only><i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Customers</span></button>
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider" data-admin-only>Finance</p>
+            <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="billing" data-admin-only><i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span></button>
+            <button onclick="router.navigate('expenses')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="expenses" data-admin-only><i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span></button>
             
-            <a href="reports.html" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group"><i class="fas fa-chart-pie w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Reports</span></a>
+            <a href="reports.html" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-admin-only><i class="fas fa-chart-pie w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Reports</span></a>
             
-            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">System</p>
-            <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="settings"><i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span></button>
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider" data-admin-only>System</p>
+            <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group" data-target="settings" data-admin-only><i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span></button>
         </nav>
         <div class="p-4 border-t border-slate-800/50 bg-slate-900/50">
             <button onclick="auth.logout()" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm rounded-lg hover:bg-slate-800" title="Logout"><i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i> <span class="sidebar-text font-medium">Sign Out</span></button>
@@ -142,6 +145,32 @@
     <main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
         <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
         
+        <!-- NEW AGENT VIEW -->
+        <section id="agent-dues" class="view-section hidden fade-in">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-800 mb-1">Customer Dues</h2>
+              <p class="text-sm text-slate-500">Live collection report (Paperless)</p>
+            </div>
+            <button onclick="loadAgentDues()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-100 transition shadow-sm btn-hover"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                  <thead class="bg-slate-50 text-slate-500 uppercase font-bold text-xs border-b">
+                    <tr>
+                      <th class="p-4 text-left">Customer</th>
+                      <th class="p-4 text-right">Total Orders</th>
+                      <th class="p-4 text-right">Total Paid</th>
+                      <th class="p-4 text-right">Due Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="agentDuesBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+          </div>
+        </section>
+
         <section id="dashboard" class="view-section fade-in">
             <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
                 <div>
@@ -384,12 +413,35 @@
 
     <div id="employeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 fade-in">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div class="p-6 border-b bg-slate-50 flex justify-between items-center"><h3 class="font-bold text-lg text-slate-800">Add Staff Member</h3><button onclick="settingsManager.closeEmployeeModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button></div>
-            <div class="p-6 space-y-5">
+            <div class="p-6 border-b bg-slate-50 flex justify-between items-center"><h3 class="font-bold text-lg text-slate-800" id="empModalTitle">Add Staff Member</h3><button onclick="settingsManager.closeEmployeeModal()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times"></i></button></div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="empId">
                 <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Name</label><input type="text" id="empName" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm"></div>
                 <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Mobile Number</label><input type="tel" id="empPhone" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm"></div>
-                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Designation</label><input type="text" id="empRole" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm" placeholder="e.g. Driver"></div>
-                <button onclick="settingsManager.saveEmployee()" class="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 transition btn-hover">Add Staff</button>
+                
+                <!-- NEW DESIGNATION FIELD -->
+                <div><label class="block text-xs uppercase font-bold text-slate-500 mb-1">Custom Designation</label><input type="text" id="empDesignation" placeholder="e.g. Senior Driver" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm"></div>
+
+                <div>
+                   <label class="block text-xs uppercase font-bold text-slate-500 mb-1">System Role (Permissions)</label>
+                   <select id="empRole" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm bg-white">
+                      <option value="driver">Driver (No Login)</option>
+                      <option value="collection_agent">Collection Agent (App Access)</option>
+                      <option value="manager">Manager (Full Access)</option>
+                      <option value="admin">Admin</option>
+                   </select>
+                </div>
+                
+                <div class="border-t pt-4">
+                  <p class="text-xs font-bold text-slate-500 uppercase mb-3 flex justify-between">Login Credentials <span class="text-slate-400 font-normal lowercase">(Optional)</span></p>
+                  <div class="space-y-3">
+                     <div><input type="text" id="empUsername" placeholder="Username (Optional)" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm"></div>
+                     <div><input type="password" id="empPassword" placeholder="Password (Optional)" class="w-full border border-slate-200 rounded-xl p-3 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 outline-none transition text-sm"></div>
+                     <p class="text-xs text-slate-400 italic hidden" id="editPasswordHint">Leave blank to keep current password unchanged.</p>
+                  </div>
+                </div>
+
+                <button onclick="settingsManager.saveEmployee()" class="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 shadow-lg shadow-brand-200 transition btn-hover">Save Staff Details</button>
             </div>
         </div>
     </div>
@@ -455,6 +507,8 @@
                     localStorage.setItem('dm_token', res.token);
                     localStorage.setItem('dm_tenant', res.tenant_id);
                     localStorage.setItem('dm_business_name', res.business_name);
+                    localStorage.setItem('dm_role', res.role); 
+                    
                     document.getElementById('loginScreen').classList.add('hidden'); 
                     app.init(); 
                 } 
@@ -463,6 +517,7 @@
                 localStorage.removeItem('dm_token');
                 localStorage.removeItem('dm_tenant');
                 localStorage.removeItem('dm_business_name');
+                localStorage.removeItem('dm_role');
                 location.reload(); 
             },
             check() {
@@ -479,14 +534,22 @@
                 document.getElementById('dashboardShopTitle').innerText = shopName;
                 document.getElementById('sidebarBrandName').innerText = shopName;
 
+                applyRoleUI();
+
                 await store.sync(); 
                 const today = new Date().toISOString().split('T')[0]; 
                 document.getElementById('dashboardDate').value = today; 
                 document.getElementById('orderDate').value = today; 
                 document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = today; }); 
-                await this.fetchOrdersForDate(today); 
-                this.renderDashboard(); 
-                router.navigate('dashboard'); 
+                
+                const role = localStorage.getItem("dm_role");
+                if (role === 'collection_agent') {
+                    router.navigate('agent-dues');
+                } else {
+                    await this.fetchOrdersForDate(today); 
+                    this.renderDashboard(); 
+                    router.navigate('dashboard');
+                }
             }, 
             toggleSidebarDesktop() { const sidebar = document.getElementById('sidebar'); const textElements = sidebar.querySelectorAll('.sidebar-text'); const icon = document.getElementById('collapseIcon'); sidebar.classList.toggle('w-72'); sidebar.classList.toggle('w-20'); textElements.forEach(el => el.classList.toggle('hidden')); icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)'; }, 
             toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }, 
@@ -497,7 +560,42 @@
             async renderDashboard() { const dateStr = document.getElementById('dashboardDate').value; const isToday = dateStr === new Date().toISOString().split('T')[0]; document.getElementById('dashDateLabel').innerText = new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); document.getElementById('todayBadge').classList.toggle('hidden', !isToday); document.getElementById('btnBackToday').classList.toggle('hidden', isToday); const stats = await this.fetchDashData(); if(!stats) return; document.getElementById('dash-revenue-today').innerText = '₹' + stats.revenue_finalized.toLocaleString(); const pctEl = document.getElementById('salesPct'); const pctVal = stats.revenue_pct_change || 0; pctEl.innerText = (pctVal >= 0 ? '+' : '') + pctVal + '%'; pctEl.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${pctVal >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`; document.getElementById('dash-dues-prev').innerText = '₹' + stats.opening_balance.toLocaleString(); document.getElementById('dash-dues-total').innerText = '₹' + stats.total_dues.toLocaleString(); document.getElementById('dash-active-customers').innerText = stats.active_customers; chartManager.render(dateStr); const highDuesList = document.getElementById('highDuesList'); highDuesList.innerHTML = ''; const defaulters = store.data.customers.filter(c => c.dues > 0).sort((a,b) => b.dues - a.dues).slice(0, 10); if(defaulters.length === 0) highDuesList.innerHTML = '<div class="text-center text-green-600 p-4 font-bold bg-green-50 rounded-xl">No pending dues!</div>'; else { highDuesList.innerHTML = '<ul class="space-y-3">'; defaulters.forEach(c => { highDuesList.innerHTML += `<li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 hover:bg-slate-100 transition"><div class="flex items-center gap-3"><div class="h-9 w-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shadow-sm">${c.name.charAt(0)}</div><span class="font-bold text-slate-700 text-sm">${c.name}</span></div><span class="font-bold text-red-600 text-sm">₹${c.dues.toLocaleString()}</span></li>`; }); highDuesList.innerHTML += '</ul>'; } }, 
             goToToday() { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; this.renderDashboard(); } 
         };
-        const router = { navigate(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); const target = document.getElementById(viewId); if(target) { target.classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(el => { const active = el.dataset.target === viewId; if(el.tagName === 'BUTTON') { el.classList.toggle('bg-slate-800', active); el.classList.toggle('text-white', active); el.classList.toggle('shadow-lg', active); } }); if(viewId === 'dashboard') { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; app.renderDashboard(); } if(viewId === 'customers') customerManager.renderList(); if(viewId === 'orders') orderManager.render(); if(viewId === 'billing') billingManager.init(); if(viewId === 'settings') settingsManager.render(); if(viewId === 'expenses') expenseManager.render(); if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); } } } };
+        
+        function applyRoleUI() {
+            const role = localStorage.getItem("dm_role");
+            if (role === "collection_agent") {
+                document.querySelectorAll("[data-admin-only]").forEach(e => e.classList.add("hidden"));
+                document.getElementById("nav-agent-dues").classList.remove("hidden");
+            } else {
+                document.querySelectorAll("[data-admin-only]").forEach(e => e.classList.remove("hidden"));
+                document.getElementById("nav-agent-dues").classList.add("hidden");
+            }
+        }
+
+        async function loadAgentDues() {
+            const res = await api.get('/api/agent/dues');
+            const tbody = document.getElementById('agentDuesBody');
+            tbody.innerHTML = '';
+            
+            if(!res || res.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No dues found. Great job!</td></tr>';
+                 return;
+            }
+
+            res.forEach(r => {
+                tbody.innerHTML += `
+                  <tr class="border-b hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-700">${r.name}</td>
+                    <td class="p-4 text-right text-slate-600">₹${r.totalOrders.toLocaleString()}</td>
+                    <td class="p-4 text-right text-green-600">₹${r.totalPayments.toLocaleString()}</td>
+                    <td class="p-4 text-right font-bold text-red-600">₹${r.due.toLocaleString()}</td>
+                  </tr>`;
+            });
+        }
+
+        const router = { navigate(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden')); const target = document.getElementById(viewId); if(target) { target.classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(el => { const active = el.dataset.target === viewId; if(el.tagName === 'BUTTON') { el.classList.toggle('bg-slate-800', active); el.classList.toggle('text-white', active); el.classList.toggle('shadow-lg', active); } }); if(viewId === 'dashboard') { const today = new Date().toISOString().split('T')[0]; document.getElementById('dashboardDate').value = today; app.renderDashboard(); } if(viewId === 'customers') customerManager.renderList(); if(viewId === 'orders') orderManager.render(); if(viewId === 'billing') billingManager.init(); if(viewId === 'settings') settingsManager.render(); if(viewId === 'expenses') expenseManager.render(); 
+        if(viewId === 'agent-dues') loadAgentDues();
+        if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); } } } };
 
         const customerManager = {
             renderList() { const term = document.getElementById('customerSearch').value.toLowerCase(); const sort = document.getElementById('customerSort').value; const tbody = document.getElementById('customerTableBody'); tbody.innerHTML = ''; let list = store.data.customers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)); if(sort === 'name') list.sort((a,b) => a.name.localeCompare(b.name)); else list.sort((a,b) => b.dues - a.dues); const today = new Date().toISOString().split('T')[0]; list.forEach(c => { const rateStatus = (c.customRates && Object.keys(c.customRates).length > 0) ? `<span class="text-purple-600 font-bold text-xs bg-purple-50 px-2 py-1 rounded-md border border-purple-100">Custom</span>` : `<span class="text-slate-500 font-medium text-xs bg-slate-100 px-2 py-1 rounded-md">Standard</span>`; const duesColor = c.dues > 1000 ? 'text-red-600 bg-red-50 border-red-100' : (c.dues > 0 ? 'text-orange-600 bg-orange-50 border-orange-100' : 'text-green-600 bg-green-50 border-green-100'); const todaysOrder = store.data.orders.find(o => o.customerId === c.id && o.date === today); const todayAmt = todaysOrder ? todaysOrder.total : 0; let prevBalance = c.dues - todayAmt; if (prevBalance < 0) prevBalance = 0; const msg = `Dear ${c.name} (ID: ${c.id}),%0A%0AThank you for your order today worth ₹${todayAmt}.%0AYour previous outstanding balance is ₹${prevBalance}.%0AThis brings your total due to ₹${c.dues}.%0A%0AWe kindly request you to clear the payment at your earliest convenience.%0A%0ABest regards,%0ADurga Dairy Warangal`; const waLink = `https://wa.me/91${c.phone}?text=${msg}`; tbody.innerHTML += `<tr class="row-hover border-b border-slate-50 transition"><td class="p-4"><div class="font-bold text-slate-800">${c.name}</div><div class="text-xs text-slate-400 font-mono">${c.id}</div></td><td class="p-4 text-slate-600"><div>${c.phone}</div><div class="text-xs text-slate-400 truncate w-32">${c.address || '-'}</div></td><td class="p-4 text-right"><span class="font-bold px-3 py-1.5 rounded-lg border ${duesColor}">₹${c.dues}</span></td><td class="p-4 text-center">${rateStatus}</td><td class="p-4 text-right flex justify-end gap-2"><a href="${waLink}" target="_blank" class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg transition" title="WhatsApp"><i class="fab fa-whatsapp"></i></a><button onclick="customerManager.openRates('${c.id}')" class="text-purple-600 bg-purple-50 hover:bg-purple-100 p-2 rounded-lg text-xs font-bold transition">Rates</button><button onclick="customerManager.edit('${c.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition" title="Edit Info"><i class="fas fa-edit"></i></button><button onclick="customerManager.delete('${c.id}')" class="text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Delete"><i class="fas fa-trash"></i></button></td></tr>`; }); },
@@ -636,7 +734,115 @@
         };
 
         const expenseManager = { render() { const s = document.getElementById('expCategory'); s.innerHTML = ''; store.data.expenseCategories.forEach(c => s.innerHTML += `<option value="${c}">${c}</option>`); const emp = document.getElementById('expEmployee'); emp.innerHTML = '<option value="">-- Other / Vendor --</option>'; const filter = document.getElementById('expLogFilter'); if(filter) { const currentVal = filter.value; filter.innerHTML = '<option value="">All Staff/Vendors</option>'; store.data.employees.forEach(e => { const opt = `<option value="${e.name}">${e.name} (${e.role})</option>`; emp.innerHTML += opt; filter.innerHTML += `<option value="${e.name}">${e.name}</option>`; }); filter.value = currentVal; } else { store.data.employees.forEach(e => emp.innerHTML += `<option value="${e.name}">${e.name} (${e.role})</option>`); } this.renderLog(); }, async renderLog() { const tbody = document.getElementById('expenseTableBody'); tbody.innerHTML = ''; const empFilter = document.getElementById('expLogFilter')?.value || ''; let exps = store.data.expenses; if(empFilter) exps = exps.filter(e => e.employeeId === empFilter); exps.sort((a,b) => new Date(b.date) - new Date(a.date)); const grouped = {}; exps.forEach(e => { const d = new Date(e.date); const key = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); if(!grouped[key]) grouped[key] = { total: 0, items: [] }; grouped[key].items.push(e); grouped[key].total += e.amount; }); Object.keys(grouped).forEach(month => { tbody.innerHTML += `<tr class="bg-gray-50 border-b border-gray-100"><td colspan="2" class="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider pl-4">${month}</td><td class="p-3 text-right text-xs font-bold text-gray-600">Total: ₹${grouped[month].total.toLocaleString()}</td></tr>`; grouped[month].items.forEach(e => { tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50 row-hover"><td class="p-4 text-slate-500 pl-8">${e.date}</td><td class="p-4 font-medium"><div class="text-slate-800">${e.title}</div><div class="mt-1"><span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 border">${e.category}</span> ${e.employeeId ? `<span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"><i class="fas fa-user mr-1"></i>${e.employeeId}</span>` : ''}</div></td><td class="p-4 text-right font-bold text-red-500">₹${e.amount}</td></tr>`; }); }); }, async add(e) { e.preventDefault(); const body = { title: document.getElementById('expTitle').value, amount: parseFloat(document.getElementById('expAmount').value), category: document.getElementById('expCategory').value, date: document.getElementById('expDate').value, employeeId: document.getElementById('expEmployee').value }; if(await api.post('/api/expenses', body)) { showToast('Expense Added'); await store.sync(); this.render(); } } };
-        const settingsManager = { render() { const c = document.getElementById('productSettingsList'); c.innerHTML = ''; store.data.products.forEach(p => { if (p.isActive !== false) { c.innerHTML += `<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative group"><button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><div class="font-bold text-slate-700 mb-2">${p.name}</div><div class="flex items-center gap-2"><span class=\"text-sm font-bold text-slate-500\">₹</span><input type=\"number\" class=\"w-full border rounded-lg p-1.5 text-sm bg-white focus:outline-none focus:border-brand-500\" value=\"${p.price}\" onchange=\"settingsManager.updatePrice('${p.id}', this.value)\"></div></div>`}}); const e = document.getElementById('employeeList'); e.innerHTML = ''; store.data.employees.forEach(emp => e.innerHTML += `<div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 group"><div><div class="font-bold text-sm text-slate-800">${emp.name}</div><div class="text-xs text-slate-500">${emp.role} • ${emp.phone || 'No Phone'}</div></div><button onclick="settingsManager.delEmployee('${emp.id}')" class="text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button></div>`); }, async addProduct() { const name = prompt("Name:"); const price = prompt("Price:"); if(name && price) { await api.post('/api/products', {name, price: parseFloat(price)}); await store.sync(); this.render(); } }, async delProduct(id) { ui.showConfirm('Delete Product?', 'Are you sure? This will remove the product from future sheets, but keep history.', async () => { await api.del(`/api/products/${id}`); await store.sync(); this.render(); }); }, async updatePrice(id, val) { await api.put(`/api/products/${id}`, {price: parseFloat(val)}); await store.sync(); }, openEmployeeModal() { document.getElementById('employeeModal').classList.remove('hidden'); document.getElementById('empName').value = ''; document.getElementById('empPhone').value = ''; document.getElementById('empRole').value = ''; }, closeEmployeeModal() { document.getElementById('employeeModal').classList.add('hidden'); }, async saveEmployee() { const body = { name: document.getElementById('empName').value, phone: document.getElementById('empPhone').value, role: document.getElementById('empRole').value }; if(await api.post('/api/employees', body)) { this.closeEmployeeModal(); await store.sync(); this.render(); } }, async delEmployee(id) { ui.showConfirm('Remove Staff?', 'Are you sure you want to remove this employee?', async () => { await api.del(`/api/employees/${id}`); await store.sync(); this.render(); }); } };
+        
+        const settingsManager = { 
+            render() { 
+                const c = document.getElementById('productSettingsList'); 
+                c.innerHTML = ''; 
+                store.data.products.forEach(p => { 
+                    if (p.isActive !== false) { 
+                        c.innerHTML += `<div class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative group"><button onclick="settingsManager.delProduct('${p.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash"></i></button><div class="font-bold text-slate-700 mb-2">${p.name}</div><div class="flex items-center gap-2"><span class=\"text-sm font-bold text-slate-500\">₹</span><input type=\"number\" class=\"w-full border rounded-lg p-1.5 text-sm bg-white focus:outline-none focus:border-brand-500\" value=\"${p.price}\" onchange=\"settingsManager.updatePrice('${p.id}', this.value)\"></div></div>`
+                    }
+                }); 
+                
+                const e = document.getElementById('employeeList'); 
+                e.innerHTML = ''; 
+                store.data.employees.forEach(emp => {
+                    const desig = emp.designation ? `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider mr-2">${emp.designation}</span>` : '';
+                    e.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 group">
+                        <div>
+                            <div class="font-bold text-sm text-slate-800 mb-1">${emp.name}</div>
+                            <div class="flex items-center">
+                                ${desig}
+                                <div class="text-xs text-slate-500 capitalize">${emp.role.replace('_', ' ')} • ${emp.phone || 'No Phone'}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                             <button onclick="settingsManager.openEmployeeModal('${emp.id}')" class="text-slate-400 hover:text-blue-500 transition opacity-0 group-hover:opacity-100 p-2"><i class="fas fa-pencil-alt"></i></button>
+                             <button onclick="settingsManager.delEmployee('${emp.id}')" class="text-slate-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-2"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`; 
+                }); 
+            }, 
+            async addProduct() { const name = prompt("Name:"); const price = prompt("Price:"); if(name && price) { await api.post('/api/products', {name, price: parseFloat(price)}); await store.sync(); this.render(); } }, 
+            async delProduct(id) { ui.showConfirm('Delete Product?', 'Are you sure? This will remove the product from future sheets, but keep history.', async () => { await api.del(`/api/products/${id}`); await store.sync(); this.render(); }); }, 
+            async updatePrice(id, val) { await api.put(`/api/products/${id}`, {price: parseFloat(val)}); await store.sync(); }, 
+            
+            openEmployeeModal(empId = null) { 
+                document.getElementById('employeeModal').classList.remove('hidden'); 
+                
+                // Clear / Reset Fields first
+                document.getElementById('empId').value = '';
+                document.getElementById('empName').value = ''; 
+                document.getElementById('empPhone').value = ''; 
+                document.getElementById('empRole').value = 'driver'; 
+                document.getElementById('empDesignation').value = '';
+                document.getElementById('empUsername').value = '';
+                document.getElementById('empPassword').value = '';
+                
+                document.getElementById('empModalTitle').innerText = 'Add Staff Member';
+                document.getElementById('editPasswordHint').classList.add('hidden');
+
+                if (empId) {
+                    const emp = store.data.employees.find(e => e.id === empId);
+                    if (emp) {
+                         document.getElementById('empId').value = emp.id;
+                         document.getElementById('empName').value = emp.name;
+                         document.getElementById('empPhone').value = emp.phone;
+                         document.getElementById('empRole').value = emp.role;
+                         document.getElementById('empDesignation').value = emp.designation || '';
+                         document.getElementById('empUsername').value = emp.username || '';
+                         document.getElementById('empModalTitle').innerText = 'Edit Staff Details';
+                         document.getElementById('editPasswordHint').classList.remove('hidden');
+                    }
+                }
+            }, 
+            
+            closeEmployeeModal() { document.getElementById('employeeModal').classList.add('hidden'); }, 
+            
+            async saveEmployee() { 
+                const id = document.getElementById('empId').value;
+                const body = { 
+                    name: document.getElementById('empName').value, 
+                    phone: document.getElementById('empPhone').value, 
+                    role: document.getElementById('empRole').value, 
+                    designation: document.getElementById('empDesignation').value,
+                    username: document.getElementById('empUsername').value, 
+                    password: document.getElementById('empPassword').value 
+                }; 
+                
+                // Only require username/password if user entered one but not the other (basic validation)
+                if(body.username && !body.password && !id) {
+                     showToast('Password is required when creating a login', 'error');
+                     return;
+                }
+
+                let res;
+                if(id) {
+                    // Update
+                    res = await api.put(`/api/employees/${id}`, body);
+                } else {
+                    // Create
+                    res = await api.post('/api/staff', body);
+                }
+
+                if(res) { 
+                    this.closeEmployeeModal(); 
+                    await store.sync(); 
+                    this.render(); 
+                    showToast(id ? 'Staff Updated' : 'Staff Added'); 
+                } 
+            }, 
+            
+            async delEmployee(id) { 
+                ui.showConfirm('Remove Staff?', 'Are you sure you want to remove this employee? This will also remove their login access.', async () => { 
+                    await api.del(`/api/employees/${id}`); 
+                    await store.sync(); 
+                    this.render(); 
+                }); 
+            } 
+        };
         
         // Window Load: Check for Token
         window.onload = () => {
