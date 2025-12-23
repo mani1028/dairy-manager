@@ -48,7 +48,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .thick-lines table, .thick-lines th, .thick-lines td { border: 2px solid #94a3b8 !important; }
         .thick-lines input { font-weight: 800 !important; color: #1e293b !important; }
-        @media print {
+         @media print {
             @page { size: landscape; margin: 5mm; }
             .no-print, #sidebar, #loginScreen, #mobileHeader, #toast-container, #dashboard, #customers, #billing, #expenses, #settings, #sidebarOverlay, #confirmModal, button, .chart-btn { display: none !important; }
             body, html { background: white !important; width: 100% !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; font-size: 10px !important; }
@@ -57,9 +57,13 @@
             .overflow-x-auto, .custom-scrollbar, .overflow-hidden { overflow: visible !important; display: block !important; width: 100% !important; height: auto !important; }
             table { width: 100% !important; border-collapse: collapse !important; border: 2px solid #000 !important; table-layout: auto !important; page-break-inside: auto; }
             tr { page-break-inside: avoid; page-break-after: auto; }
-            th, td { border: 1px solid #000 !important; padding: 2px 4px !important; font-size: 10px !important; color: black !important; white-space: nowrap; height: auto !important; }
-            th { background-color: #eee !important; -webkit-print-color-adjust: exact; font-weight: bold; }
-            th:first-child, td:first-child { position: static !important; box-shadow: none !important; width: auto !important; min-width: 100px; text-align: left; }
+            
+            /* UPDATED: Allow wrapping for headers (th) and tighten padding for small boxes */
+            th, td { border: 1px solid #000 !important; padding: 2px !important; font-size: 10px !important; color: black !important; height: auto !important; }
+            th { background-color: #eee !important; -webkit-print-color-adjust: exact; font-weight: 800 !important; white-space: normal !important; vertical-align: bottom !important; line-height: 1.1 !important; }
+            td { white-space: nowrap; }
+            th:first-child, td:first-child { position: static !important; box-shadow: none !important; width: auto !important; min-width: 100px; text-align: left; white-space: normal; }
+            
             input { border: none !important; background: transparent !important; width: 100% !important; text-align: center; font-size: 10px !important; font-weight: bold !important; padding: 0 !important; margin: 0 !important; }
             #printHeader { display: flex !important; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid #000; }
             .print-only { display: block !important; }
@@ -641,10 +645,11 @@
                     return isUsed;
                 });
 
+                                // --- UPDATED HEADER FOR SMALLER BOXES & WRAPPING ---
                 const h = document.getElementById('routeHeaderRow');
-                h.innerHTML = '<th class="p-3 w-32 sticky left-0 bg-slate-50 z-10 text-left border-r border-slate-200 shadow-sm">Customer</th>' + 
-                              this.currentVisibleProducts.map(p => `<th class="p-2 w-16 text-center text-xs font-bold break-words leading-tight border-r border-slate-100">${p.name}</th>`).join('') + 
-                              '<th class="p-4 text-center no-print">Status</th>';
+                h.innerHTML = '<th class="p-3 w-40 sticky left-0 bg-slate-100 z-10 text-left border-r border-slate-300 shadow-sm text-sm font-extrabold text-slate-800">Customer</th>' + 
+                              this.currentVisibleProducts.map(p => `<th class="p-1 w-14 min-w-[3.5rem] text-center text-[10px] font-extrabold text-slate-900 break-words leading-tight border-r border-slate-300 bg-slate-50 align-bottom">${p.name}</th>`).join('') + 
+                              '<th class="p-4 text-center no-print w-24 font-bold text-slate-800">Status</th>';
                 
                 const tbody = document.getElementById('orderTableBody'); tbody.innerHTML = '';
                 
@@ -657,11 +662,12 @@
                              if(!item) item = order.items.find(i => i.name === p.name); 
                              if(item) qty = item.quantity;
                          }
-                         return `<td class="p-0 border-r border-slate-50"><input type="number" id="ord_${c.id}_${p.id}" ${this.isLocked ? 'disabled' : ''} min="0" value="${qty}" class="w-full border-0 border-b-2 border-transparent hover:border-slate-200 focus:border-brand-500 rounded-none text-center py-2 bg-transparent focus:bg-brand-50 quantity-input text-sm font-bold h-10 transition-colors ${this.isLocked ? 'text-slate-400 cursor-not-allowed' : ''}" data-pid="${p.id}" data-row="${cIdx}" data-col="${pIdx}" oninput="orderManager.updateTotals()" onkeydown="orderManager.handleKeyNav(event, this)"></td>`
+                         // --- UPDATED INPUT CELL FOR SMALLER BOXES ---
+                         return `<td class="p-0 border-r border-slate-300 w-14 min-w-[3.5rem]"><input type="number" id="ord_${c.id}_${p.id}" ${this.isLocked ? 'disabled' : ''} min="0" value="${qty}" class="w-full h-full border-0 focus:ring-0 focus:outline-none text-center py-2 bg-transparent focus:bg-brand-50 quantity-input text-sm font-extrabold text-slate-900 transition-colors ${this.isLocked ? 'text-slate-400 cursor-not-allowed' : ''}" data-pid="${p.id}" data-row="${cIdx}" data-col="${pIdx}" oninput="orderManager.updateTotals()" onkeydown="orderManager.handleKeyNav(event, this)"></td>`
                     }).join('');
                     
                     const status = order ? (order.status === 'finalized' ? `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Finalized</span>` : `<span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Draft</span>`) : `<span class="text-xs text-slate-400">Pending</span>`;
-                    tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-3 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]"><div class="font-bold text-slate-700 text-sm whitespace-nowrap">${c.name}</div></td>${inputs}<td class="p-4 text-center w-24 no-print" id="status_${c.id}">${status}</td></tr>`;
+                    tbody.innerHTML += `<tr class="border-b border-slate-200 hover:bg-slate-50"><td class="p-3 sticky left-0 bg-white z-10 border-r border-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]"><div class="font-bold text-slate-800 text-sm whitespace-nowrap">${c.name}</div></td>${inputs}<td class="p-4 text-center w-24 no-print" id="status_${c.id}">${status}</td></tr>`;
                 });
                 this.updateTotals();
             },
@@ -685,8 +691,8 @@
             updateTotals() {
                 const totals = {}; this.currentVisibleProducts.forEach(p => totals[p.id] = 0);
                 document.querySelectorAll('.quantity-input').forEach(input => { const pid = input.dataset.pid; if(totals[pid] !== undefined) totals[pid] += (parseInt(input.value) || 0); });
-                let footerHtml = '<tr class="bg-slate-100 font-bold sticky bottom-0 z-20"><td class="p-3 text-right sticky left-0 bg-slate-100 border-r border-slate-200">Total:</td>';
-                this.currentVisibleProducts.forEach(p => footerHtml += `<td class="p-2 text-center text-brand-600 text-sm border-r border-slate-200">${totals[p.id]}</td>`);
+                let footerHtml = '<tr class="bg-slate-100 font-bold sticky bottom-0 z-20"><td class="p-3 text-right sticky left-0 bg-slate-100 border-r border-slate-300 font-extrabold text-slate-800">Total:</td>';
+                this.currentVisibleProducts.forEach(p => footerHtml += `<td class="p-2 text-center text-brand-700 text-sm border-r border-slate-300 font-extrabold">${totals[p.id]}</td>`);
                 document.getElementById('orderTableFooter').innerHTML = footerHtml + '<td class="no-print"></td></tr>';
             },
             async fillYesterday() {

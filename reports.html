@@ -38,12 +38,27 @@
 
         /* Print Styles */
         @media print {
+            /* UPDATED: Increased margin to 10mm for neat, equal borders */
+            @page { size: landscape; margin: 10mm; }
+            
             .no-print, #sidebar, #mobileHeader, #toast-container, #sidebarOverlay, #reportActions { display: none !important; }
-            html, body { height: auto !important; width: 100% !important; overflow: visible !important; position: static !important; background: white !important; margin: 0 !important; }
+            html, body { height: auto !important; width: 100% !important; overflow: visible !important; position: static !important; background: white !important; margin: 0 !important; padding: 0 !important; }
+            
             #mainContent { margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
-            #reportOutput { display: block !important; width: 100% !important; border: none !important; box-shadow: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #000; }
-            th, td { border: 1px solid #000 !important; padding: 4px !important; font-size: 10pt !important; color: black !important; }
+            #reportOutput { display: block !important; width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+            
+            /* Center the table and give it 99% width to ensure borders print */
+            .overflow-x-auto, .overflow-y-auto, .custom-scrollbar { overflow: visible !important; height: auto !important; max-height: none !important; width: 100% !important; border: none !important; display: flex; justify-content: center; }
+            table { width: 99% !important; margin: 0 auto !important; border-collapse: collapse !important; border: 2px solid #000 !important; table-layout: auto !important; }
+            
+            th, td { border: 1px solid #000 !important; padding: 3px !important; font-size: 10px !important; color: black !important; page-break-inside: avoid; }
+            th { white-space: normal !important; vertical-align: bottom; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: 800 !important; line-height: 1.1 !important; text-align: center !important; }
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; }
+            
+            /* Fix for totals row invisibility in print */
+            .print-black-text { color: black !important; background-color: transparent !important; border-top: 2px solid black !important; }
+            .print-black-text td { color: black !important; font-weight: 800 !important; }
         }
     </style>
 </head>
@@ -85,20 +100,43 @@
 
         <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
+            
+            <!-- Operations Group -->
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-4 sidebar-text tracking-wider">Operations</p>
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
                 <i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Dashboard</span>
             </button>
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
                 <i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Orders & Route</span>
             </button>
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
                 <i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Customers</span>
             </button>
 
-            <!-- Active Page -->
-            <button class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-800 text-white shadow-lg transition btn-hover group">
+            <!-- Finance Group -->
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">Finance</p>
+
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span>
+            </button>
+
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span>
+            </button>
+
+            <!-- Active Page (Reports) -->
+            <button class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-800 text-white shadow-lg transition btn-hover group mt-2">
                 <i class="fas fa-chart-pie w-5 text-center text-brand-400"></i> <span class="sidebar-text font-medium">Reports</span>
+            </button>
+
+            <!-- System Group -->
+            <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">System</p>
+
+            <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
+                <i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span>
             </button>
         </nav>
         
@@ -198,7 +236,8 @@
     </main>
 
     <script>
-        const API_BASE = "https://dairy-manager.onrender.com/";
+        // FIXED: Using relative path so it works locally and in production
+        const API_BASE = ""; 
 
         // UI Logic
         const app = {
@@ -254,7 +293,11 @@
                     const res = await fetch(`${API_BASE}${endpoint}`, { headers: this.getHeaders() });
                     if (res.status === 401) { auth.logout(); return null; }
                     return await res.json();
-                } catch (e) { showToast('Connection Error', 'error'); return null; }
+                } catch (e) { 
+                    console.error("API GET Error:", e);
+                    showToast('Connection Error: Check console', 'error'); 
+                    return null; 
+                }
             },
             async post(endpoint, body) {
                  try {
@@ -263,8 +306,13 @@
                         headers: this.getHeaders(),
                         body: JSON.stringify(body)
                     });
+                    if (res.status === 401) { auth.logout(); return null; }
                     return await res.json();
-                } catch (e) { return null; }
+                } catch (e) { 
+                    console.error("API POST Error:", e);
+                    showToast('Connection Error: Check console', 'error'); 
+                    return null; 
+                }
             }
         };
 
@@ -299,8 +347,14 @@
             async init() { 
                 const today = new Date();
                 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                document.getElementById('repEndDate').value = today.toISOString().split('T')[0];
-                document.getElementById('repStartDate').value = firstDay.toISOString().split('T')[0];
+                // Fix timezone offset for date inputs
+                const toISODate = (d) => {
+                    const z = d.getTimezoneOffset() * 60 * 1000;
+                    return new Date(d - z).toISOString().split('T')[0];
+                };
+                
+                document.getElementById('repEndDate').value = toISODate(today);
+                document.getElementById('repStartDate').value = toISODate(firstDay);
 
                 await store.init();
 
@@ -349,8 +403,14 @@
 
                 let html = "";
                 const getDates = () => {
-                    let d = new Date(start), e = new Date(end), arr = [];
-                    while(d <= e) { arr.push(d.toISOString().split('T')[0]); d.setDate(d.getDate() + 1); }
+                    let d = new Date(start);
+                    let e = new Date(end);
+                    let arr = [];
+                    // Simple string-based iteration to avoid timezone issues
+                    while(d <= e) { 
+                        arr.push(d.toISOString().split('T')[0]); 
+                        d.setDate(d.getDate() + 1); 
+                    }
                     return arr;
                 };
 
@@ -387,22 +447,13 @@
 
                     const reportProducts = Array.from(allProductsMap.values());
                     const rev = data.orders.reduce((sum, o) => sum + o.total, 0); 
-                    const exp = data.expenses.reduce((sum, e) => sum + e.amount, 0); 
+                    
+                    // REMOVED TOTAL REVENUE/EXPENSE CARDS HERE AS REQUESTED
                     
                     html = `
-                        <div class="text-center mb-8">
+                        <div class="text-center mb-4">
                             <h3 class="font-bold text-2xl text-slate-800">Daily Sales Statement</h3>
                             <p class="text-slate-500 font-medium">${new Date(start).toLocaleDateString()} — ${new Date(end).toLocaleDateString()}</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center mb-8 max-w-2xl mx-auto">
-                            <div class="bg-green-50 p-6 rounded-2xl border border-green-100 shadow-sm">
-                                <div class="text-xs text-green-800 uppercase font-bold mb-2 tracking-wider">Total Revenue</div>
-                                <div class="text-3xl font-bold text-green-600">₹${rev.toLocaleString()}</div>
-                            </div>
-                            <div class="bg-red-50 p-6 rounded-2xl border border-red-100 shadow-sm">
-                                <div class="text-xs text-red-800 uppercase font-bold mb-2 tracking-wider">Total Expenses</div>
-                                <div class="text-3xl font-bold text-red-600">₹${exp.toLocaleString()}</div>
-                            </div>
                         </div>
                         <div class="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl border border-slate-200">
                             <table class="w-full text-sm text-left border-collapse min-w-[800px]">
@@ -525,10 +576,13 @@
                                 <table class="w-full text-sm text-left border-collapse">
                                     <thead class="bg-slate-100 text-slate-700 font-bold text-xs uppercase">
                                         <tr>
-                                            <th class="p-3 border-b border-r border-slate-300 w-24 bg-slate-200">Date</th>`;
-                    products.forEach(p => html += `<th class="p-3 border-b border-r border-slate-300 text-center min-w-[60px]">${p.name}</th>`);
-                    html += `<th class="p-3 border-b border-r border-slate-300 text-right w-24 bg-slate-50">Cost</th>
-                             <th class="p-3 border-b border-slate-300 text-right w-24 bg-green-50 text-green-800">Paid</th>
+                                            <th class="p-2 border-b border-r border-slate-300 w-24 bg-slate-200">Date</th>`;
+                    
+                    // UPDATED: Use compact, wrapping headers for products
+                    products.forEach(p => html += `<th class="p-1 border-b border-r border-slate-300 text-center text-[10px] w-14 min-w-[3.5rem] break-words leading-tight bg-slate-50 align-bottom">${p.name}</th>`);
+                    
+                    html += `<th class="p-2 border-b border-r border-slate-300 text-right w-20 bg-slate-50">Cost</th>
+                             <th class="p-2 border-b border-slate-300 text-right w-20 bg-green-50 text-green-800">Paid</th>
                              </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">`;
@@ -549,25 +603,26 @@
                             if(!order && pay === 0) return; 
 
                             const displayDate = new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }); 
-                            html += `<tr><td class="p-2 border-r border-slate-200 font-bold text-slate-600 bg-slate-50/50 date-col whitespace-nowrap">${displayDate}</td>`; 
+                            html += `<tr><td class="p-1 border-r border-slate-200 font-bold text-slate-600 bg-slate-50/50 date-col whitespace-nowrap text-xs text-center">${displayDate}</td>`; 
                             products.forEach(p => { 
                                 const item = order ? order.items.find(i => i.name === p.name) : null; 
                                 const qty = item ? item.quantity : ''; 
                                 if(item) prodTotals[p.id] += (item.quantity || 0); 
-                                html += `<td class="p-2 border-r border-slate-200 text-center ${qty ? 'text-slate-800 font-bold' : 'text-slate-300'}">${qty || ''}</td>`; 
+                                html += `<td class="p-1 border-r border-slate-200 text-center ${qty ? 'text-slate-800 font-bold' : 'text-slate-300'}">${qty || ''}</td>`; 
                             }); 
                             const cost = order ? order.total : 0;
-                            html += `<td class="p-2 border-r border-slate-200 text-right font-bold text-slate-800 bg-slate-50/30">₹${cost || ''}</td>
-                                     <td class="p-2 text-right font-bold text-green-600 bg-green-50/30">₹${pay || ''}</td></tr>`; 
+                            html += `<td class="p-1 border-r border-slate-200 text-right font-bold text-slate-800 bg-slate-50/30">₹${cost || ''}</td>
+                                     <td class="p-1 text-right font-bold text-green-600 bg-green-50/30">₹${pay || ''}</td></tr>`; 
                             grandTotal += cost;
                             grandPaid += pay;
                         }); 
                     }
-                    html += `<tr class="bg-slate-800 text-white font-bold border-t-2 border-slate-900">
-                                <td class="p-3 border-r border-slate-700 text-right">TOTAL</td>`;
-                    products.forEach(p => html += `<td class="p-3 border-r border-slate-700 text-center">${prodTotals[p.id]}</td>`);
-                    html += `<td class="p-3 border-r border-slate-700 text-right text-base">₹${grandTotal.toLocaleString()}</td>
-                             <td class="p-3 text-right text-green-300 text-base">₹${grandPaid.toLocaleString()}</td>
+                    // FIXED: Added print-black-text class to ensure totals show in print
+                    html += `<tr class="bg-slate-800 text-white font-bold border-t-2 border-slate-900 print-black-text">
+                                <td class="p-2 border-r border-slate-700 text-right text-xs">TOTAL</td>`;
+                    products.forEach(p => html += `<td class="p-2 border-r border-slate-700 text-center text-xs">${prodTotals[p.id]}</td>`);
+                    html += `<td class="p-2 border-r border-slate-700 text-right text-sm">₹${grandTotal.toLocaleString()}</td>
+                             <td class="p-2 text-right text-green-300 text-sm">₹${grandPaid.toLocaleString()}</td>
                              </tr></tbody></table></div>`;
                     
                     const netPeriod = grandTotal - grandPaid;
@@ -683,5 +738,4 @@
         };
     </script>
 </body>
-
 </html>
