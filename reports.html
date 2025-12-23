@@ -21,42 +21,30 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        
-        /* Scrollbar */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover { transition: all 0.2s; }
+        .btn-hover:hover { transform: translateY(-1px); filter: brightness(105%); }
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        /* Animations & Transitions */
-        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-hover { transition: all 0.2s; }
-        .btn-hover:hover { transform: translateY(-1px); filter: brightness(105%); }
-        .btn-hover:active { transform: translateY(0); }
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Print Styles */
         @media print {
-            /* UPDATED: Increased margin to 10mm for neat, equal borders */
-            @page { size: landscape; margin: 10mm; }
-            
+            @page { size: landscape; margin: 5mm; }
             .no-print, #sidebar, #mobileHeader, #toast-container, #sidebarOverlay, #reportActions { display: none !important; }
             html, body { height: auto !important; width: 100% !important; overflow: visible !important; position: static !important; background: white !important; margin: 0 !important; padding: 0 !important; }
-            
             #mainContent { margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; display: block !important; }
             #reportOutput { display: block !important; width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
-            
-            /* Center the table and give it 99% width to ensure borders print */
-            .overflow-x-auto, .overflow-y-auto, .custom-scrollbar { overflow: visible !important; height: auto !important; max-height: none !important; width: 100% !important; border: none !important; display: flex; justify-content: center; }
+            .overflow-x-auto, .overflow-y-auto, .custom-scrollbar { overflow: visible !important; height: auto !important; max-height: none !important; width: 100% !important; border: none !important; display: block !important; }
             table { width: 99% !important; margin: 0 auto !important; border-collapse: collapse !important; border: 2px solid #000 !important; table-layout: auto !important; }
-            
-            th, td { border: 1px solid #000 !important; padding: 3px !important; font-size: 10px !important; color: black !important; page-break-inside: avoid; }
+            th, td { border: 1px solid #000 !important; padding: 3px !important; font-size: 9px !important; color: black !important; page-break-inside: avoid; }
             th { white-space: normal !important; vertical-align: bottom; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: 800 !important; line-height: 1.1 !important; text-align: center !important; }
             thead { display: table-header-group; }
             tr { page-break-inside: avoid; }
-            
-            /* Fix for totals row invisibility in print */
             .print-black-text { color: black !important; background-color: transparent !important; border-top: 2px solid black !important; }
             .print-black-text td { color: black !important; font-weight: 800 !important; }
         }
@@ -64,10 +52,8 @@
 </head>
 <body class="bg-slate-50 h-screen flex flex-col md:flex-row text-slate-800 overflow-hidden">
 
-    <!-- Toast Notification -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- Mobile Header -->
     <div id="mobileHeader" class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center z-30 shadow-md">
         <div class="flex items-center gap-3">
             <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white mr-2"><i class="fas fa-arrow-left"></i></button>
@@ -76,12 +62,10 @@
             </div>
             <span class="font-bold text-lg tracking-wide shop-name-display">Dairy<span class="text-brand-400">Pro</span></span>
         </div>
-        <button onclick="app.toggleSidebar()" class="text-white focus:outline-none p-2 rounded hover:bg-slate-800 transition"><i class="fas fa-bars text-xl"></i></button>
+        <button onclick="toggleSidebar()" class="text-white focus:outline-none p-2 rounded hover:bg-slate-800 transition"><i class="fas fa-bars text-xl"></i></button>
     </div>
 
-    <!-- Sidebar -->
     <aside class="fixed md:relative inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col z-40 sidebar-transition -translate-x-full md:translate-x-0 shadow-xl md:shadow-none whitespace-nowrap overflow-hidden" id="sidebar">
-        <!-- Brand Header -->
         <div class="p-6 flex justify-between items-center h-20 border-b border-slate-800/50">
             <div class="flex items-center gap-3 overflow-hidden">
                 <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand-900 flex-shrink-0">
@@ -92,80 +76,84 @@
                     <span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Professional</span>
                 </div>
             </div>
-            <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
-             <button onclick="app.toggleSidebarDesktop()" class="hidden md:block text-slate-500 hover:text-white focus:outline-none transition" title="Toggle Menu">
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <button onclick="toggleSidebarDesktop()" class="hidden md:block text-slate-500 hover:text-white focus:outline-none transition" title="Toggle Menu">
                 <i class="fas fa-chevron-left transition-transform duration-300" id="collapseIcon"></i>
             </button>
         </div>
 
-        <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
-            
-            <!-- Operations Group -->
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-4 sidebar-text tracking-wider">Operations</p>
             
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Dashboard</span>
+                <i class="fas fa-home w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Dashboard</span>
             </button>
             
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Orders & Route</span>
+                <i class="fas fa-truck w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Orders & Route</span>
             </button>
             
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Customers</span>
+                <i class="fas fa-users w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Customers</span>
             </button>
 
-            <!-- Finance Group -->
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">Finance</p>
-
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Billing</span>
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Billing</span>
             </button>
-
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Expenses</span>
+                <i class="fas fa-wallet w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Expenses</span>
             </button>
-
-            <!-- Active Page (Reports) -->
-            <button class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-800 text-white shadow-lg transition btn-hover group mt-2">
-                <i class="fas fa-chart-pie w-5 text-center text-brand-400"></i> <span class="sidebar-text font-medium">Reports</span>
+            
+            <button class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-slate-800 text-white shadow-lg transition btn-hover group">
+                <i class="fas fa-chart-pie w-5 text-center text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Reports</span>
             </button>
-
-            <!-- System Group -->
+            
             <p class="px-4 text-[10px] font-bold text-slate-500 uppercase mb-2 mt-6 sidebar-text tracking-wider">System</p>
-
+            
             <button onclick="window.location.href='index.html'" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-800/50 hover:text-white text-slate-400 transition btn-hover group">
-                <i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i> <span class="sidebar-text font-medium">Settings</span>
+                <i class="fas fa-cog w-5 text-center group-hover:text-brand-400 transition-colors"></i>
+                <span class="sidebar-text font-medium">Settings</span>
             </button>
         </nav>
-        
-        <!-- User Profile -->
+
         <div class="p-4 border-t border-slate-800/50 bg-slate-900/50">
-            <button onclick="auth.logout()" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm rounded-lg hover:bg-slate-800" title="Logout">
-                <i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i> 
+            <button onclick="auth.logout()" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm rounded-lg hover:bg-slate-800">
+                <i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i>
                 <span class="sidebar-text font-medium">Sign Out</span>
             </button>
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
-        <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
         
-        <!-- REPORTS SECTION -->
-        <section id="reports" class="fade-in max-w-6xl mx-auto">
+        <section id="reports" class="fade-in max-w-7xl mx-auto">
             <div class="flex justify-between items-end mb-6 no-print">
                 <div>
                     <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Reports & Analytics</h2>
                     <p class="text-slate-500 mt-1">Generate financial summaries and day books.</p>
                 </div>
-                <button onclick="reportManager.init()" class="text-sm bg-white border border-slate-200 text-slate-500 hover:text-brand-600 px-3 py-2 rounded-lg font-bold transition shadow-sm hover:shadow-md">
-                    <i class="fas fa-sync-alt mr-1"></i> Refresh Data
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="window.location.href='index.html'" class="text-sm bg-white border border-slate-200 text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg font-bold transition shadow-sm">
+                        <i class="fas fa-home mr-1"></i> Dashboard
+                    </button>
+                    <button onclick="reportManager.init()" class="text-sm bg-white border border-slate-200 text-brand-600 hover:bg-brand-50 px-4 py-2 rounded-lg font-bold transition shadow-sm">
+                        <i class="fas fa-sync-alt mr-1"></i> Refresh
+                    </button>
+                </div>
             </div>
 
-            <!-- Controls -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     
@@ -210,7 +198,6 @@
                 </div>
             </div>
             
-            <!-- Output Area -->
             <div id="reportOutput" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px]">
                 <div class="flex flex-col items-center justify-center h-64 text-slate-400">
                     <i class="fas fa-chart-bar text-5xl mb-4 text-slate-200"></i>
@@ -218,9 +205,7 @@
                 </div>
             </div>
             
-            <!-- Actions -->
             <div id="reportActions" class="hidden flex justify-end gap-3 mt-6 no-print">
-                 <!-- Fix #1: Finalize Button added here -->
                 <button id="finalizeBtn" onclick="reportManager.finalizeSheet()" class="hidden bg-slate-700 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-slate-800 text-sm font-bold transition btn-hover flex items-center gap-2">
                     <i class="fas fa-lock"></i> Finalize Sheet
                 </button>
@@ -236,26 +221,27 @@
     </main>
 
     <script>
-        // FIXED: Using relative path so it works locally and in production
         const API_BASE = ""; 
 
-        // UI Logic
-        const app = {
-            toggleSidebar() {
-                document.getElementById('sidebar').classList.toggle('-translate-x-full');
-                const overlay = document.getElementById('sidebarOverlay');
-                if(overlay) overlay.classList.toggle('hidden');
-            },
-            toggleSidebarDesktop() {
-                const sidebar = document.getElementById('sidebar');
-                const textElements = sidebar.querySelectorAll('.sidebar-text');
-                const icon = document.getElementById('collapseIcon');
-                sidebar.classList.toggle('w-72'); 
-                sidebar.classList.toggle('w-20');
-                textElements.forEach(el => el.classList.toggle('hidden'));
-                icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-        };
+        // --- NEW SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+
+        function toggleSidebarDesktop() {
+            const sidebar = document.getElementById('sidebar');
+            const textElements = sidebar.querySelectorAll('.sidebar-text');
+            const icon = document.getElementById('collapseIcon');
+            
+            sidebar.classList.toggle('w-72');
+            sidebar.classList.toggle('w-20');
+            
+            textElements.forEach(el => el.classList.toggle('hidden'));
+            
+            // Rotate icon
+            icon.style.transform = sidebar.classList.contains('w-20') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
 
         const showToast = (msg, type='success') => {
             const container = document.getElementById('toast-container');
@@ -269,18 +255,10 @@
             setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
-        // Auth
+        // Auth & API
         const auth = {
-            logout() {
-                localStorage.removeItem('dm_token');
-                window.location.href = 'index.html';
-            },
-            check() {
-                if(!localStorage.getItem('dm_token')) {
-                    // Assuming for demo we might allow access, but in prod redirect:
-                    // window.location.href = 'index.html';
-                }
-            }
+            logout() { localStorage.removeItem('dm_token'); window.location.href = 'index.html'; },
+            check() { if(!localStorage.getItem('dm_token')) { /* window.location.href = 'index.html'; */ } }
         };
 
         const api = {
@@ -293,26 +271,14 @@
                     const res = await fetch(`${API_BASE}${endpoint}`, { headers: this.getHeaders() });
                     if (res.status === 401) { auth.logout(); return null; }
                     return await res.json();
-                } catch (e) { 
-                    console.error("API GET Error:", e);
-                    showToast('Connection Error: Check console', 'error'); 
-                    return null; 
-                }
+                } catch (e) { console.error("API GET Error:", e); showToast('Connection Error', 'error'); return null; }
             },
             async post(endpoint, body) {
                  try {
-                    const res = await fetch(`${API_BASE}${endpoint}`, { 
-                        method: 'POST',
-                        headers: this.getHeaders(),
-                        body: JSON.stringify(body)
-                    });
+                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) });
                     if (res.status === 401) { auth.logout(); return null; }
                     return await res.json();
-                } catch (e) { 
-                    console.error("API POST Error:", e);
-                    showToast('Connection Error: Check console', 'error'); 
-                    return null; 
-                }
+                } catch (e) { console.error("API POST Error:", e); showToast('Connection Error', 'error'); return null; }
             }
         };
 
@@ -325,9 +291,6 @@
                     this.data.customers = data.customers || [];
                     this.data.products = data.products || [];
                     this.data.employees = data.employees || [];
-                    
-                    // Fix #4: Shop Name
-                    // Check if settings came with sync, or use default
                     this.data.settings = data.settings || { shopName: "Dairy Manager" };
                     this.updateShopName();
                 }
@@ -335,9 +298,7 @@
             updateShopName() {
                 const name = this.data.settings.shopName || "Dairy Manager";
                 document.querySelectorAll('.shop-name-display').forEach(el => {
-                   if(el.tagName === 'SPAN' && el.innerHTML.includes('Dairy')) {
-                        el.innerHTML = name; // Update header text
-                   }
+                   if(el.tagName === 'SPAN' && el.innerHTML.includes('Dairy')) el.innerHTML = name;
                 });
             }
         };
@@ -347,32 +308,22 @@
             async init() { 
                 const today = new Date();
                 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                // Fix timezone offset for date inputs
-                const toISODate = (d) => {
-                    const z = d.getTimezoneOffset() * 60 * 1000;
-                    return new Date(d - z).toISOString().split('T')[0];
-                };
-                
+                const toISODate = (d) => { const z = d.getTimezoneOffset() * 60 * 1000; return new Date(d - z).toISOString().split('T')[0]; };
                 document.getElementById('repEndDate').value = toISODate(today);
                 document.getElementById('repStartDate').value = toISODate(firstDay);
-
                 await store.init();
-
                 const rCust = document.getElementById('repCustomer');
                 rCust.innerHTML = '<option value="">-- Select Customer --</option>';
                 store.data.customers.forEach(c => rCust.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-
                 const rEmp = document.getElementById('repEmployee');
                 rEmp.innerHTML = '<option value="">All Employees</option>';
                 store.data.employees.forEach(e => rEmp.innerHTML += `<option value="${e.name}">${e.name}</option>`);
             },
-
             toggleInputs() { 
                 const t = document.getElementById('reportType').value; 
                 document.getElementById('repCustomerContainer').classList.toggle('hidden', t !== 'customer_monthly'); 
                 document.getElementById('repEmployeeContainer').classList.toggle('hidden', t !== 'expense_report'); 
             },
-
             async generate() {
                 const type = document.getElementById('reportType').value;
                 const start = document.getElementById('repStartDate').value;
@@ -385,134 +336,107 @@
                 
                 const data = await api.get(`/api/reports/data?start=${start}&end=${end}`);
                 
-                if (!data) {
-                    out.innerHTML = '<div class="text-center text-red-500 font-bold p-8">Failed to fetch report data.</div>';
-                    return;
-                }
+                if (!data) { out.innerHTML = '<div class="text-center text-red-500 font-bold p-8">Failed to fetch report data.</div>'; return; }
                 
                 this.currentData = data;
                 document.getElementById('reportActions').classList.remove('hidden');
                 
-                // Fix #1: Show Finalize Button if viewing a Daily Report (Start = End)
                 const lockBtn = document.getElementById('finalizeBtn');
-                if (start === end && type === 'financial') {
-                    lockBtn.classList.remove('hidden');
-                } else {
-                    lockBtn.classList.add('hidden');
-                }
+                if (start === end && type === 'financial') lockBtn.classList.remove('hidden');
+                else lockBtn.classList.add('hidden');
 
                 let html = "";
-                const getDates = () => {
-                    let d = new Date(start);
-                    let e = new Date(end);
-                    let arr = [];
-                    // Simple string-based iteration to avoid timezone issues
-                    while(d <= e) { 
-                        arr.push(d.toISOString().split('T')[0]); 
-                        d.setDate(d.getDate() + 1); 
-                    }
-                    return arr;
-                };
+                const getDates = () => { let d = new Date(start); let e = new Date(end); let arr = []; while(d <= e) { arr.push(d.toISOString().split('T')[0]); d.setDate(d.getDate() + 1); } return arr; };
 
-                // --- 1. Financial Summary (Daily Sales Statement) ---
+                // --- 1. Financial Summary (With Mini Dashboard) ---
                 if(type === 'financial') { 
                     const dates = getDates();
-                    
-                    // Fix #3: Robust Column Logic (Deleted Products Issue)
-                    // Instead of just using active products, we find ALL products referenced in these orders
+                    // Robust Product Mapping
                     const allProductsMap = new Map();
-                    
-                    // 1. Add currently active products
                     store.data.products.forEach(p => allProductsMap.set(p.id, p));
-                    
-                    // 2. Scan historical orders for deleted products
                     data.orders.forEach(o => {
                         o.items.forEach(item => {
-                            // Try to find by ID
-                            if (!allProductsMap.has(item.id)) {
-                                // Not found in active list? Check if we already added this archived item
-                                // If using name-based matching in legacy data:
-                                const existing = Array.from(allProductsMap.values()).find(p => p.name === item.name);
-                                if (!existing) {
-                                    // Truly new/deleted product found in history
-                                    allProductsMap.set(item.id || item.name, {
-                                        id: item.id || item.name,
-                                        name: item.name + " (Archived)", // Mark visually
-                                        price: 0
-                                    });
-                                }
+                            const pid = item.productId || item.id || item.name;
+                            if (!allProductsMap.has(pid) && !allProductsMap.has(item.name)) {
+                                allProductsMap.set(pid, { id: pid, name: item.name + " (Arc)", price: 0 });
                             }
                         });
                     });
-
                     const reportProducts = Array.from(allProductsMap.values());
-                    const rev = data.orders.reduce((sum, o) => sum + o.total, 0); 
                     
-                    // REMOVED TOTAL REVENUE/EXPENSE CARDS HERE AS REQUESTED
-                    
+                    // Calc Totals
+                    const totalSales = data.orders.reduce((sum, o) => sum + o.total, 0);
+                    const totalColl = data.payments.reduce((sum, p) => sum + p.amount, 0);
+                    const totalExp = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+                    const netCash = totalColl - totalExp;
+
                     html = `
-                        <div class="text-center mb-4">
-                            <h3 class="font-bold text-2xl text-slate-800">Daily Sales Statement</h3>
-                            <p class="text-slate-500 font-medium">${new Date(start).toLocaleDateString()} — ${new Date(end).toLocaleDateString()}</p>
+                        <div class="mb-6 border-b pb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <div><h3 class="font-bold text-2xl text-slate-800">Daily Sales Statement</h3><p class="text-slate-500 font-medium">${new Date(start).toLocaleDateString()} — ${new Date(end).toLocaleDateString()}</p></div>
+                                <div class="text-right text-xs text-slate-400 font-mono no-print">Generated: ${new Date().toLocaleTimeString()}</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 print-summary-grid">
+                                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 print-summary-item">
+                                    <div class="text-xs font-bold text-indigo-400 uppercase tracking-wide">Total Sales</div>
+                                    <div class="text-2xl font-bold text-indigo-700">₹${totalSales.toLocaleString()}</div>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-xl border border-green-100 print-summary-item">
+                                    <div class="text-xs font-bold text-green-500 uppercase tracking-wide">Collections</div>
+                                    <div class="text-2xl font-bold text-green-700">₹${totalColl.toLocaleString()}</div>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-xl border border-red-100 print-summary-item">
+                                    <div class="text-xs font-bold text-red-400 uppercase tracking-wide">Expenses</div>
+                                    <div class="text-2xl font-bold text-red-700">₹${totalExp.toLocaleString()}</div>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 print-summary-item">
+                                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wide">Net Cash Flow</div>
+                                    <div class="text-2xl font-bold ${netCash >= 0 ? 'text-slate-700' : 'text-red-600'}">₹${netCash.toLocaleString()}</div>
+                                </div>
+                            </div>
                         </div>
+
                         <div class="overflow-x-auto overflow-y-auto max-h-[600px] custom-scrollbar rounded-xl border border-slate-200">
                             <table class="w-full text-sm text-left border-collapse min-w-[800px]">
                                 <thead class="bg-slate-100 text-slate-500 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm">
                                     <tr>
                                         <th class="p-4 border-b border-r border-slate-200 sticky left-0 bg-slate-100 z-20">Date</th>`;
-                    
-                    reportProducts.forEach(p => {
-                        html += `<th class="p-4 border-b border-r border-slate-200 text-center">${p.name}</th>`;
-                    });
-
-                    html += `<th class="p-4 border-b text-right">Total Sales</th>
+                    reportProducts.forEach(p => { html += `<th class="p-4 border-b border-r border-slate-200 text-center min-w-[80px]">${p.name}</th>`; });
+                    html += `<th class="p-4 border-b text-right bg-slate-50">Total Sales</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">`;
+                    let totalQtyMap = {}; reportProducts.forEach(p => totalQtyMap[p.id] = 0);
                     
-                    let totalQtyMap = {};
-                    reportProducts.forEach(p => totalQtyMap[p.id] = 0);
-
                     dates.forEach(d => {
                         const dayOrders = data.orders.filter(o => o.date === d);
                         const dayTotal = dayOrders.reduce((sum, o) => sum + o.total, 0);
-                        
                         if(dayTotal === 0 && dayOrders.length === 0) return; 
-
-                        let dayQuantities = {};
-                        reportProducts.forEach(p => dayQuantities[p.id] = 0);
-
+                        
+                        let dayQuantities = {}; reportProducts.forEach(p => dayQuantities[p.id] = 0);
+                        
                         dayOrders.forEach(o => {
                             o.items.forEach(item => {
-                                // Match against our comprehensive list
-                                let product = reportProducts.find(p => p.id === item.id);
-                                if (!product) product = reportProducts.find(p => p.name === item.name); // Name fallback
-                                
-                                if(product) {
-                                    dayQuantities[product.id] += (item.quantity || 0);
-                                }
+                                let product = reportProducts.find(p => p.id === item.id || p.id === item.productId);
+                                if (!product) product = reportProducts.find(p => p.name === item.name);
+                                if(product) dayQuantities[product.id] += (item.quantity || 0);
                             });
                         });
-
                         reportProducts.forEach(p => totalQtyMap[p.id] += dayQuantities[p.id]);
-
-                        html += `<tr>
-                                    <td class="p-4 font-medium text-slate-700 date-col whitespace-nowrap border-r border-slate-100 sticky left-0 bg-white border-b-0">${new Date(d).toLocaleDateString()}</td>`;
                         
+                        html += `<tr><td class="p-4 font-medium text-slate-700 date-col whitespace-nowrap border-r border-slate-100 sticky left-0 bg-white border-b-0">${new Date(d).toLocaleDateString()}</td>`;
                         reportProducts.forEach(p => {
                              const qty = dayQuantities[p.id];
                              html += `<td class="p-4 text-center text-slate-600 border-r border-slate-100">${qty > 0 ? qty : '-'}</td>`;
                         });
-
-                        html += `<td class="p-4 text-right font-bold text-green-600">₹${dayTotal}</td></tr>`;
+                        html += `<td class="p-4 text-right font-bold text-green-600 bg-slate-50/30">₹${dayTotal}</td></tr>`;
                     });
-
+                    
                     html += `<tr class="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-20 shadow-md">
                                 <td class="p-4 text-right border-r border-slate-200 sticky left-0 bg-slate-50">TOTAL</td>`;
-                    reportProducts.forEach(p => {
-                        html += `<td class="p-4 text-center border-r border-slate-200">${totalQtyMap[p.id]}</td>`;
-                    });
-                    html += `<td class="p-4 text-right text-green-700">₹${rev}</td></tr>`;
+                    reportProducts.forEach(p => { html += `<td class="p-4 text-center border-r border-slate-200">${totalQtyMap[p.id]}</td>`; });
+                    html += `<td class="p-4 text-right text-green-700">₹${totalSales}</td></tr>`;
                     html += `</tbody></table></div>`;
 
                 // --- 2. Day Book ---
@@ -552,7 +476,7 @@
                     const cust = store.data.customers.find(c => c.id === cid); 
                     const custOrders = data.orders.filter(o => o.customerId === cid); 
                     const custPayments = data.payments.filter(p => p.customerId === cid);
-                    const products = store.data.products; // For customer statement, usually active products are enough, but could be enhanced same as financial
+                    const products = store.data.products;
 
                     html = `<div class="mb-6 border-b border-slate-200 pb-6">
                                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -578,9 +502,7 @@
                                         <tr>
                                             <th class="p-2 border-b border-r border-slate-300 w-24 bg-slate-200">Date</th>`;
                     
-                    // UPDATED: Use compact, wrapping headers for products
                     products.forEach(p => html += `<th class="p-1 border-b border-r border-slate-300 text-center text-[10px] w-14 min-w-[3.5rem] break-words leading-tight bg-slate-50 align-bottom">${p.name}</th>`);
-                    
                     html += `<th class="p-2 border-b border-r border-slate-300 text-right w-20 bg-slate-50">Cost</th>
                              <th class="p-2 border-b border-slate-300 text-right w-20 bg-green-50 text-green-800">Paid</th>
                              </tr>
@@ -617,7 +539,6 @@
                             grandPaid += pay;
                         }); 
                     }
-                    // FIXED: Added print-black-text class to ensure totals show in print
                     html += `<tr class="bg-slate-800 text-white font-bold border-t-2 border-slate-900 print-black-text">
                                 <td class="p-2 border-r border-slate-700 text-right text-xs">TOTAL</td>`;
                     products.forEach(p => html += `<td class="p-2 border-r border-slate-700 text-center text-xs">${prodTotals[p.id]}</td>`);
@@ -636,7 +557,6 @@
                 out.innerHTML = html;
             },
 
-            // Fix #1: Finalize Logic Placeholder
             async finalizeSheet() {
                 const start = document.getElementById('repStartDate').value;
                 if (!confirm(`Are you sure you want to finalize the sheet for ${start}? This will lock the entries.`)) return;
@@ -647,7 +567,6 @@
                     showToast("Sheet Finalized Successfully", "success");
                     document.getElementById('finalizeBtn').classList.add('hidden'); // Hide button
                 } else {
-                    // Fallback visual for demo if API fails/doesn't exist
                     showToast("Sheet Locked (Visual Only - Connect API)", "success");
                     document.getElementById('finalizeBtn').classList.add('hidden');
                 }
@@ -683,7 +602,6 @@
                 } else if(type === 'financial') {
                      // Updated CSV logic to include deleted columns
                      let header = ["Date"];
-                     // Use the same robust logic as display
                      const allProductsMap = new Map();
                      store.data.products.forEach(p => allProductsMap.set(p.id, p));
                      this.currentData.orders.forEach(o => o.items.forEach(item => {
@@ -734,6 +652,10 @@
 
         window.onload = () => {
             auth.check();
+            // Removed loadSidebar() call as it's now embedded
+            // Highlight Reports active state
+            const shopName = localStorage.getItem('dm_business_name') || 'Dairy Manager';
+            document.querySelectorAll('.shop-name-display').forEach(el => el.innerText = shopName);
             reportManager.init();
         };
     </script>

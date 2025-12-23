@@ -8,37 +8,28 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, and_, inspect, text
 from sqlalchemy.exc import OperationalError, IntegrityError
 from dotenv import load_dotenv
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- CONFIGURATION ---
 load_dotenv('data.env') 
 
 app = Flask(__name__)
-
-# SECURITY: Ensure this is set in your environment variables in production
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-prod')
+# PRODUCTION NOTE: Change this key in your environment variables for security
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-secure-random-key-in-production')
 CORS(app) 
 
 # --- DATABASE SETUP ---
 database_url = os.environ.get('DATABASE_URL')
 
 if not database_url:
-    raise ValueError("No DATABASE_URL set for Flask application. Please check data.env")
-
-if database_url.startswith("postgres://"):
+    print("WARNING: DATABASE_URL not set. App may fail to connect.")
+    
+if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# PRODUCTION TWEAK: Connection Pooling for Supabase/Postgres
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 300,
-    "pool_size": 10,
-    "max_overflow": 20,
-}
 
 db = SQLAlchemy(app)
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -76,12 +67,14 @@ class DairyTenant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     location_code = db.Column(db.String(10), nullable=False)
     location_seq = db.Column(db.Integer, nullable=False)
+    # Added location_name as requested
+    location_name = db.Column(db.String(100)) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DairyUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False) # Increased length for hash
+    password = db.Column(db.String(255), nullable=False) 
     role = db.Column(db.String(20), default='admin')
     tenant_id = db.Column(db.String(50), db.ForeignKey('dairy_tenant.id'), nullable=False)
 
@@ -184,13 +177,6 @@ class Expense(db.Model):
 
 # --- HELPERS ---
 
-def generate_tenant_id(location_name):
-    codes = {"Warangal": "WL", "Hyderabad": "HYD", "Karimnagar": "KR"}
-    code = codes.get(location_name, location_name[:3].upper() if location_name else "GEN")
-    last_tenant = DairyTenant.query.filter_by(location_code=code).order_by(DairyTenant.location_seq.desc()).first()
-    seq = (last_tenant.location_seq + 1) if last_tenant else 1
-    return f"{code}{seq:02d}", code, seq
-
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -202,6 +188,7 @@ def require_auth(f):
             g.tenant_id = data['tenant_id']
             g.user_id = data['user_id']
             
+            # Load Role
             user = DairyUser.query.get(g.user_id)
             g.role = user.role if user else 'admin'
             
@@ -228,69 +215,47 @@ def home(): return send_file('index.html')
 @app.route('/reports.html')
 def reports_page(): return send_file('reports.html')
 
-@app.route('/api/register', methods=['POST'])
-def register():
-    data = request.json
-    business_name = data.get('business_name')
-    location = data.get('location')
-    username = data.get('username')
-    password = data.get('password')
-    
-    if not username or not password or not business_name: return jsonify({"error": "Missing required fields"}), 400
-    if DairyUser.query.filter_by(username=username).first(): return jsonify({"error": "Username taken"}), 400
-
-    tid, code, seq = generate_tenant_id(location)
-    
-    try:
-        tenant = DairyTenant(id=tid, name=business_name, location_code=code, location_seq=seq)
-        db.session.add(tenant)
-
-        # SECURITY FIX: Hash password
-        hashed_pw = generate_password_hash(password)
-        user = DairyUser(username=username, password=hashed_pw, tenant_id=tid, role='admin')
-        db.session.add(user)
-        
-        # Auto-seed products
-        for p in DEFAULT_PRODUCTS:
-            new_prod = Product(
-                id=f"{tid}_{p['code']}",
-                tenant_id=tid,
-                name=p['name'],
-                price=p['price'],
-                unit=p['unit'],
-                is_active=True
-            )
-            db.session.add(new_prod)
-            
-        db.session.commit()
-        token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
-        return jsonify({"message": "Account created!", "token": token, "tenant_id": tid, "business_name": tenant.name})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": "Registration failed", "details": str(e)}), 500
+# Note: /api/register REMOVED. Tenant creation is handled via SQL in Supabase.
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
+    # Logic: You create the user via SQL, they log in here.
     user = DairyUser.query.filter_by(username=data.get('username')).first()
     
-    # SECURITY FIX: Check hashed password
+    # SECURITY: Check hashed password (Make sure you hash passwords in your SQL insert or handle plain text appropriately if temporary)
+    # If you inserted plain text in SQL for testing, you might need a temporary logic check, 
+    # but strictly speaking, check_password_hash expects a hash.
+    # If you manually insert via SQL, use a tool to generate a hash or temporarily allow plain comparison (NOT RECOMMENDED FOR PROD).
+    # Assuming standard flow where you insert correct hashes or this app handles password setting later.
+    
     if user and check_password_hash(user.password, data.get('password')):
-        # --- SELF-HEALING: Check if products exist ---
-        existing_products_count = Product.query.filter_by(tenant_id=user.tenant_id).count()
-        if existing_products_count == 0:
-            for p in DEFAULT_PRODUCTS:
-                new_prod = Product(
-                    id=f"{user.tenant_id}_{p['code']}",
-                    tenant_id=user.tenant_id,
-                    name=p['name'],
-                    price=p['price'],
-                    unit=p['unit'],
-                    is_active=True
-                )
-                db.session.add(new_prod)
-            db.session.commit()
         
+        # --- AUTO-INSERT PRODUCTS ON FIRST LOGIN ---
+        # Since registration is manual via SQL, we use this Login trigger to ensure 
+        # the new tenant has the default products populated.
+        
+        try:
+            existing_products_count = Product.query.filter_by(tenant_id=user.tenant_id).count()
+            
+            if existing_products_count == 0:
+                print(f" First login for {user.tenant_id}. Auto-inserting default products...")
+                for p in DEFAULT_PRODUCTS:
+                    new_prod = Product(
+                        id=f"{user.tenant_id}_{p['code']}",
+                        tenant_id=user.tenant_id,
+                        name=p['name'],
+                        price=p['price'],
+                        unit=p['unit'],
+                        is_active=True
+                    )
+                    db.session.add(new_prod)
+                db.session.commit()
+                print("Default products inserted.")
+        except Exception as e:
+            print(f"Error checking/inserting products: {e}")
+        # -------------------------------------------
+
         token = serializer.dumps({'user_id': user.id, 'tenant_id': user.tenant_id})
         tenant = DairyTenant.query.get(user.tenant_id)
         return jsonify({
@@ -316,11 +281,10 @@ def add_staff():
         if DairyUser.query.filter_by(username=username).first():
             return jsonify({"error": "Username already taken"}), 400
         
-        # SECURITY FIX: Hash password
-        hashed_pw = generate_password_hash(password)
+        hashed_password = generate_password_hash(password)
         user = DairyUser(
             username=username,
-            password=hashed_pw,
+            password=hashed_password,
             role=data['role'],
             tenant_id=tid
         )
@@ -339,6 +303,7 @@ def add_staff():
         username=linked_username
     )
     db.session.add(emp)
+
     db.session.commit()
     return jsonify({"message": "Staff added successfully"})
 
@@ -350,7 +315,8 @@ def update_staff(id):
     tid = g.tenant_id
     
     emp = Employee.query.filter_by(id=id, tenant_id=tid).first()
-    if not emp: return jsonify({"error": "Employee not found"}), 404
+    if not emp:
+        return jsonify({"error": "Employee not found"}), 404
 
     emp.name = data['name']
     emp.phone = data['phone']
@@ -372,7 +338,8 @@ def update_staff(id):
                 if password:
                     old_user.password = generate_password_hash(password)
             else:
-                 new_user = DairyUser(username=username, password=generate_password_hash(password or "temp123"), role=emp.role, tenant_id=tid)
+                 hashed_pw = generate_password_hash(password or "temp123")
+                 new_user = DairyUser(username=username, password=hashed_pw, role=emp.role, tenant_id=tid)
                  db.session.add(new_user)
             
             emp.username = username
@@ -383,7 +350,8 @@ def update_staff(id):
             if not password:
                 return jsonify({"error": "Password required when creating new login"}), 400
             
-            new_user = DairyUser(username=username, password=generate_password_hash(password), role=emp.role, tenant_id=tid)
+            hashed_pw = generate_password_hash(password)
+            new_user = DairyUser(username=username, password=hashed_pw, role=emp.role, tenant_id=tid)
             db.session.add(new_user)
             emp.username = username
         
@@ -391,7 +359,7 @@ def update_staff(id):
             existing_user = DairyUser.query.filter_by(username=username).first()
             if existing_user:
                 existing_user.role = emp.role
-                if password:
+                if password: 
                     existing_user.password = generate_password_hash(password)
     
     db.session.commit()
@@ -405,6 +373,7 @@ def delete_employee(id):
     if emp:
         if emp.username:
             DairyUser.query.filter_by(username=emp.username).delete()
+        
         db.session.delete(emp)
         db.session.commit()
     return jsonify({"message": "Deleted"})
@@ -414,28 +383,28 @@ def delete_employee(id):
 @require_role(['admin', 'collection_agent'])
 def agent_dues():
     tid = g.tenant_id
+    # Optimize: Only fetch customers with non-zero dues
+    # We filter by tenant_id. We can also filter by dues != 0 directly in SQL for speed if needed, 
+    # but iterating is fine for small-medium datasets.
     customers = Customer.query.filter_by(tenant_id=tid).all()
     output = []
 
     for c in customers:
-        orders = db.session.query(func.sum(Order.total)).filter_by(
-            tenant_id=tid, customer_id=c.id, status='finalized'
-        ).scalar() or 0
-
-        payments = db.session.query(func.sum(Payment.amount)).filter_by(
-            tenant_id=tid, customer_id=c.id
-        ).scalar() or 0
-
-        due_amount = orders - payments
+        # We only care about the actual due balance now
+        actual_due = c.dues
         
-        if due_amount != 0 or orders > 0:
+        # Only show if there is money to collect (positive) or refund (negative)
+        if actual_due != 0:
             output.append({
                 "customerId": c.id,
                 "name": c.name,
-                "totalOrders": orders,
-                "totalPayments": payments,
-                "due": due_amount
+                "phone": c.phone, # Added phone in case you want to add a 'Call' button later
+                "address": c.address,
+                "due": actual_due
             })
+    
+    # Sort by highest due amount first
+    output.sort(key=lambda x: x['due'], reverse=True)
 
     return jsonify(output)
 
@@ -447,14 +416,10 @@ def sync_data():
         customers = [c.to_dict() for c in Customer.query.filter_by(tenant_id=tid).all()]
         products = [p.to_dict() for p in Product.query.filter_by(tenant_id=tid).all()]
         employees = [e.to_dict() for e in Employee.query.filter_by(tenant_id=tid).all()]
-        
-        # Optimization: Limit history for initial sync
-        recent_payments = [p.to_dict() for p in Payment.query.filter_by(tenant_id=tid).order_by(Payment.date.desc()).limit(500).all()]
-        expenses = [e.to_dict() for e in Expense.query.filter_by(tenant_id=tid).order_by(Expense.date.desc()).limit(500).all()]
-        
+        recent_payments = [p.to_dict() for p in Payment.query.filter_by(tenant_id=tid).order_by(Payment.date.desc()).limit(1000).all()]
+        expenses = [e.to_dict() for e in Expense.query.filter_by(tenant_id=tid).order_by(Expense.date.desc()).limit(1000).all()]
         year_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
         recent_orders = [o.to_dict() for o in Order.query.filter(and_(Order.tenant_id == tid, Order.date >= year_ago)).all()]
-        
         return jsonify({"customers": customers, "products": products, "employees": employees, "payments": recent_payments, "expenses": expenses, "orders": recent_orders})
     except OperationalError: return jsonify({"error": "Database error."}), 500
 
@@ -640,26 +605,38 @@ def mod_product(id):
     return jsonify({"message": "Success"})
 
 
-# --- AUTO-CREATE TABLES & MIGRATION ON STARTUP ---
+# --- AUTO-CREATE TABLES & MIGRATION ---
+# This block ensures tables are created when the app starts.
+# It also checks for the new 'location_name' column and adds it if missing.
 with app.app_context():
     db.create_all()
     
-    # Auto Migration logic
     try:
         inspector = inspect(db.engine)
+        
+        # Migration: Check 'employee' table
         if 'employee' in inspector.get_table_names():
             cols = [c['name'] for c in inspector.get_columns('employee')]
             with db.engine.connect() as conn:
                 if 'designation' not in cols:
-                    print("Migrating: Adding designation column")
+                    print("Migrating: Adding designation column to employee")
                     conn.execute(text("ALTER TABLE employee ADD COLUMN designation VARCHAR(100)"))
                 if 'username' not in cols:
-                    print("Migrating: Adding username column")
+                    print("Migrating: Adding username column to employee")
                     conn.execute(text("ALTER TABLE employee ADD COLUMN username VARCHAR(50)"))
                 conn.commit()
-    except Exception as e:
-        print(f"Migration warning: {e}")
+        
+        # Migration: Check 'dairy_tenant' table
+        if 'dairy_tenant' in inspector.get_table_names():
+            cols = [c['name'] for c in inspector.get_columns('dairy_tenant')]
+            with db.engine.connect() as conn:
+                if 'location_name' not in cols:
+                    print("Migrating: Adding location_name column to dairy_tenant")
+                    conn.execute(text("ALTER TABLE dairy_tenant ADD COLUMN location_name VARCHAR(100)"))
+                conn.commit()
 
+    except Exception as e:
+        print(f"Migration warning (safe to ignore on fresh DB): {e}")
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)

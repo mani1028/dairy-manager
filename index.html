@@ -145,28 +145,25 @@
             <button onclick="auth.logout()" class="flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 w-full transition text-sm rounded-lg hover:bg-slate-800" title="Logout"><i class="fas fa-sign-out-alt w-5 text-center flex-shrink-0"></i> <span class="sidebar-text font-medium">Sign Out</span></button>
         </div>
     </aside>
-
-    <main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
+<main class="flex-1 overflow-y-auto relative bg-slate-50 p-3 md:p-8 w-full custom-scrollbar" id="mainContent">
         <div id="sidebarOverlay" onclick="app.toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
         
-        <!-- NEW AGENT VIEW -->
         <section id="agent-dues" class="view-section hidden fade-in">
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-2xl font-bold text-slate-800 mb-1">Customer Dues</h2>
-              <p class="text-sm text-slate-500">Live collection report (Paperless)</p>
+              <h2 class="text-2xl font-bold text-slate-800 mb-1">Collection List</h2>
+              <p class="text-sm text-slate-500">Live outstanding balances</p>
             </div>
             <button onclick="loadAgentDues()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-100 transition shadow-sm btn-hover"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
           </div>
+
           <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                   <thead class="bg-slate-50 text-slate-500 uppercase font-bold text-xs border-b">
                     <tr>
-                      <th class="p-4 text-left">Customer</th>
-                      <th class="p-4 text-right">Total Orders</th>
-                      <th class="p-4 text-right">Total Paid</th>
-                      <th class="p-4 text-right">Due Amount</th>
+                      <th class="p-4 text-left w-2/3">Customer Name</th>
+                      <th class="p-4 text-right w-1/3">Pending Due</th>
                     </tr>
                   </thead>
                   <tbody id="agentDuesBody" class="divide-y divide-slate-100"></tbody>
@@ -582,17 +579,23 @@
             tbody.innerHTML = '';
             
             if(!res || res.length === 0) {
-                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No dues found. Great job!</td></tr>';
+                 tbody.innerHTML = '<tr><td colspan="2" class="p-6 text-center text-slate-500 font-medium">No pending dues found. All clear!</td></tr>';
                  return;
             }
 
             res.forEach(r => {
+                // Color coding for dues
+                const dueColor = r.due > 2000 ? 'text-red-600' : (r.due > 0 ? 'text-slate-800' : 'text-green-600');
+                
                 tbody.innerHTML += `
-                  <tr class="border-b hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-700">${r.name}</td>
-                    <td class="p-4 text-right text-slate-600">₹${r.totalOrders.toLocaleString()}</td>
-                    <td class="p-4 text-right text-green-600">₹${r.totalPayments.toLocaleString()}</td>
-                    <td class="p-4 text-right font-bold text-red-600">₹${r.due.toLocaleString()}</td>
+                  <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4">
+                        <div class="font-bold text-slate-700 text-base">${r.name}</div>
+                        <div class="text-xs text-slate-400 font-mono mt-0.5">${r.customerId} ${r.address ? '• ' + r.address : ''}</div>
+                    </td>
+                    <td class="p-4 text-right">
+                        <div class="font-bold text-lg ${dueColor}">₹${r.due.toLocaleString()}</div>
+                    </td>
                   </tr>`;
             });
         }

@@ -1,153 +1,126 @@
-# 🥛 Dairy Manager Pro
+# Dairy Manager (SaaS Backend)
 
-Dairy Manager Pro is a comprehensive, multi-tenant web application designed to digitize and streamline the daily operations of milk delivery businesses (Dairies). It manages daily route sheets, customer ledgers, billing, expenses, and reporting in a unified interface.
+A robust, multi-tenant Flask API designed to manage daily operations for dairy distribution businesses. This system handles customer management, daily order processing, billing, payments, expenses, and staff administration.
 
----
+Built with **Python (Flask)** and **PostgreSQL (Supabase)**.
 
 ## 🚀 Key Features
 
-### 1. 🏢 Multi-Tenancy & Security
-- **SaaS Architecture**: Supports multiple dairies on a single backend with strict `tenant_id` isolation.
-- **Secure Authentication**: Token-based authentication (JWT-style).
-- **Data Safety**: Automatic database creation and schema handling.
+* **🏢 Multi-Tenant Support:** Manage multiple independent dairy businesses from a single backend instance.
+* **🔐 Role-Based Access Control:** Secure login for Admins and Staff (Collection Agents).
+* **👥 Customer Management:** Track customer details, addresses, and individual dues.
+* **🥛 Product Management:** customized product lists with dynamic pricing.
+* **📅 Daily Orders:** Efficient daily order entry with "Draft" and "Finalized" statuses.
+* **💰 Financials:** Record payments, track customer balances, and manage business expenses.
+* **🔄 Auto-Healing Database:** Automatically seeds default products for new tenants upon first login.
+* **📊 Reporting:** API endpoints for syncing data and generating reports.
 
-### 2. 🚚 Daily Route & Order Management
-- Excel-like grid for fast daily quantity entry.
-- Smart product columns (auto show/hide).
-- Keyboard navigation (arrow keys).
-- One-click **Copy Previous Day**.
-- Draft vs Finalize workflow:
-  - Draft: No billing impact.
-  - Finalize: Locks data & updates customer dues.
+## 🛠️ Tech Stack
 
-### 3. 👥 Customer Management
-- Live customer ledger & dues tracking.
-- Customer-specific product rates.
-- WhatsApp payment reminders.
-- Duplicate phone number prevention.
+* **Language:** Python 3.x
+* **Framework:** Flask
+* **ORM:** SQLAlchemy
+* **Database:** PostgreSQL (via Supabase)
+* **Authentication:** Werkzeug Security & ItsDangerous (Token-based)
+* **CORS:** Flask-CORS enabled for frontend integration
 
-### 4. 💰 Billing & Payments
-- Cash/Online payment logging.
-- PDF invoice & statement generation.
-- Full payment history tracking.
+## ⚙️ Setup & Installation
 
-### 5. 📉 Expense Manager
-- Track diesel, salary, maintenance, etc.
-- Expense categories.
-- Staff-linked expenses.
-
-### 6. 📊 Analytics & Reporting (`reports.html`)
-- Dashboard KPIs.
-- Daily sales matrix.
-- Monthly customer statement.
-- Day Book.
-- CSV/Excel export.
-
----
-
-## 🛠️ Technical Stack
-
-### Backend (`app.py`)
-- Python 3.x
-- Flask
-- SQLAlchemy ORM
-- SQLite (Dev) / PostgreSQL (Prod)
-- Token auth using `itsdangerous`
-- REST JSON APIs
-
-### Frontend (`index.html`, `reports.html`)
-- Vanilla JavaScript (ES6+)
-- Tailwind CSS (CDN)
-- Custom reactive state store
-- Client-side hash router
-- Chart.js
-- html2pdf.js
-- FontAwesome
-
----
-
-## ⚙️ Installation & Setup
-
-### Prerequisites
-- Python 3.8+
-
-### Install Dependencies
+### 1. Clone the Repository
 ```bash
-pip install -r requirements.txt
+git clone [https://github.com/your-username/dairy-manager-backend.git](https://github.com/your-username/dairy-manager-backend.git)
+cd dairy-manager-backend
+
 ```
 
-### Environment Variables
-Create `data.env`:
-```env
-SECRET_KEY=your-super-secret-key
-DATABASE_URL=sqlite:///dairy_manager.db
+### 2. Create a Virtual Environment
+
+```bash
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
 ```
 
-### Run Application
+### 3. Install Dependencies
+
+Create a `requirements.txt` file (if you haven't already) with the following content, then install:
+
+```bash
+pip install flask flask-sqlalchemy flask-cors psycopg2-binary python-dotenv
+
+```
+
+### 4. Environment Configuration
+
+Create a `.env` file in the root directory and add your credentials:
+
+```ini
+SECRET_KEY=your_secure_random_key_here
+DATABASE_URL=postgresql://user:password@host:port/database
+
+```
+
+> **Note:** If using Supabase, use the "Session" connection string (port 5432).
+
+## 🗄️ Database Setup
+
+The application uses SQLAlchemy. When you run the app for the first time, it will automatically create the necessary tables (`dairy_tenant`, `dairy_user`, `customer`, `order`, etc.).
+
+### Creating a Tenant (Manual SQL)
+
+Since public registration is disabled for security, you must manually insert new tenants and admin users directly into your database (e.g., Supabase SQL Editor).
+
+1. **Generate a Password Hash:**
+Run this python one-liner to get your hashed password:
+```bash
+python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('your_password'))"
+
+```
+
+
+2. **Run SQL Commands:**
+```sql
+-- 1. Create Tenant
+INSERT INTO dairy_tenant (id, name, location_code, location_seq, location_name, created_at)
+VALUES ('HYD01', 'My Dairy Business', 'HYD', 1, 'Hyderabad', NOW());
+
+-- 2. Create Admin User (Paste hash from step 1)
+INSERT INTO dairy_user (username, password, role, tenant_id)
+VALUES ('admin_user', 'scrypt:32768:8:1$....', 'admin', 'HYD01');
+
+```
+
+
+3. **Auto-Setup:**
+Log in via the frontend/API. The system will detect the new tenant and automatically populate the default product list.
+
+## 🏃‍♂️ Running the Application
+
 ```bash
 python app.py
+
 ```
 
-Open: http://127.0.0.1:5000  
-Database auto-creates on first run.
+The server will start on `http://127.0.0.1:5000`.
 
----
+## 📡 API Endpoints Overview
 
-## 📖 User Workflow Guide
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/login` | Authenticate and retrieve token |
+| `GET` | `/api/sync` | Get all master data (customers, products, etc.) |
+| `POST` | `/api/orders/save` | Save or update daily orders |
+| `POST` | `/api/sheets/finalize` | Finalize orders for the day and update dues |
+| `POST` | `/api/payments` | Record customer payments |
+| `GET` | `/api/dashboard` | Get revenue and due statistics |
 
-### 1. Initial Setup
-- Register New Dairy
-- Add Products & Prices
-- Add Staff
-- Add Customers (with opening dues if any)
+## 📄 License
 
-### 2. Daily Route Sheet
-- Go to Orders & Route
-- Select date
-- Enter quantities or Copy Previous Day
-- Save Draft
-- Finalize at day end (updates dues)
+This project is for private use or strictly for educational purposes.
 
-### 3. Payments & Billing
-- Record customer payments
-- Generate PDF invoices
-- Share via WhatsApp
-
-### 4. End of Month
-- Go to Reports
-- Select customer & date range
-- View full consumption vs payments
-
----
-
-## 📂 Project Structure
-```
-/
-├── app.py
-├── index.html
-├── reports.html
-├── dairy_manager.db
-├── data.env
-└── README.md
 ```
 
----
-
-## ⚠️ Troubleshooting
-
-### Database Errors (500)
-Use **Reset Database (Dev Only)** from login page  
-⚠️ Deletes all data.
-
-### Printing Issues
-Enable **Background Graphics** in browser print settings.
-
----
-
-## 📜 License
-Free for personal & pilot use.  
-Commercial SaaS deployment ready.
-
----
-
-**Built for Indian dairy businesses 🇮🇳**
+```
